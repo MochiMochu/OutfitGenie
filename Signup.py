@@ -207,7 +207,7 @@ class SignUpScreen(tk.Frame):
             flags.append("3")
         if not re.search('[0-9]', p):
             flags.append("4")
-        if not re.search("[_@$#?£!;/%^&*()+=~<>.,-]", p):
+        if not re.search("[_@$#?£!;/%^&*()+=~<>.,{}':-]", p):
             flags.append("5")
         if re.search("\s", p):
             flags.append("6")
@@ -245,7 +245,6 @@ class SignUpScreen(tk.Frame):
             self.SUpasswordNoConfirm.pack_forget()
             self.send_pass()
             self.account_success()
-            self.parent.destroy()
             self.parent.after(1500, self.open_homescreen)
 
     # displays success of account creation
@@ -254,6 +253,7 @@ class SignUpScreen(tk.Frame):
 
     # go to home screen
     def open_homescreen(self):
+        self.parent.destroy()
         import homescreen
 
 

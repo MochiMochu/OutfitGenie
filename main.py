@@ -40,7 +40,7 @@ class MainApp(tk.Frame):
                                          width=45)
         self.logo = tk.Canvas(parent, width=300, height=160, background='#cdf3ff', highlightbackground="#cdf3ff")
         self.logo_image = self.get_logo()
-        self.logo.create_image(150, 80, image=self.logo_image)
+        self.logo.create_image(152, 80, image=self.logo_image)
 
         # configuring ttk widgets before initiating them
         self.style.configure("TFrame", background="#cdf3ff")
