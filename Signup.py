@@ -153,7 +153,7 @@ class SignUpScreen(tk.Frame):
         u = self.SUusername.get()
         u = u.lower()
         p = self.SUpassword.get()
-        conn = sqlite3.connect("user_logins.db")
+        conn = sqlite3.connect("user_information.db")
         c = conn.cursor()
         select_query = "select * from logins where username = ?"
         c.execute(select_query, (u,))
@@ -172,12 +172,14 @@ class SignUpScreen(tk.Frame):
     def send_pass(self):
         u = self.SUusername.get()
         p = self.SUpassword.get()
+        num = self.get_user_num()
         u = u.lower()
-        conn = sqlite3.connect("user_logins.db")
+        conn = sqlite3.connect("user_information.db")
         c = conn.cursor()
         try:
-            c.execute("INSERT INTO logins VALUES (:users, :passes)",
-                      {"users": u,
+            c.execute("INSERT INTO logins VALUES (:id, :users, :passes)",
+                      {"id": num,
+                       "users": u,
                        "passes": p}
                       )
             self.SUusernameTaken.pack_forget()
@@ -186,6 +188,7 @@ class SignUpScreen(tk.Frame):
                 self.username_error()
         conn.commit()
         conn.close()
+        self.save_username(u)
 
     # checks whether the password meets the requirements for a secure password and passes any flags to password_errors
     def password_validity(self):
@@ -247,6 +250,21 @@ class SignUpScreen(tk.Frame):
             self.account_success()
             self.parent.after(1500, self.open_homescreen)
 
+    # retrieves the number of users already signed up in order to create the next user's ID
+    def get_user_num(self):
+        with open("user_num.txt") as f:
+            user_number = int(f.readline())
+        with open("user_num.txt", "w") as f:
+            new_num = user_number + 1
+            string_num = str(new_num)
+            f.write(string_num)
+        return user_number
+
+    # saves the current user's username to the text file to be able to access their information later
+    def save_username(self, u):
+        with open("current_user.txt", "w") as f:
+            f.write(u)
+
     # displays success of account creation
     def account_success(self):
         self.successCreate.place(x=0, y=0, relwidth=1)
@@ -255,6 +273,7 @@ class SignUpScreen(tk.Frame):
     def open_homescreen(self):
         self.parent.destroy()
         import homescreen
+
 
 
 new = tk.Tk()

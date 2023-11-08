@@ -93,9 +93,9 @@ class MainApp(tk.Frame):
         username = self.username.get()
         username = username.lower()
         password = self.password.get()
-        conn = sqlite3.connect("user_logins.db")
+        conn = sqlite3.connect("user_information.db")
         c = conn.cursor()
-        select_query = "select * from logins where username = ?"
+        select_query = "select username, password from logins where username = ?"
         c.execute(select_query, (username,))
         answer = c.fetchall()
         conn.close()
@@ -105,7 +105,7 @@ class MainApp(tk.Frame):
             for value in item:
                 login_details.append(value)
         if items != 0:
-            self.check_password(password, login_details)  # checks the entered username against the record
+            self.check_password(password, login_details, username)  # checks the entered username against the record
         else:
             self.username_not_found()
             # schedule running of the function after 2 seconds
@@ -125,9 +125,10 @@ class MainApp(tk.Frame):
             self.passwordEntry.config(show="•")
 
     # checking if the password matches the username in the database
-    def check_password(self, tb_checked, login_details):
+    def check_password(self, tb_checked, login_details, username):
         if tb_checked == login_details[1]:
             self.passwordNoMatch.pack_forget()  # removes the label if the password didn't match
+            self.save_username(username)
             self.login_success()
             self.parent.after(1500, self.close_and_open_home)
         else:
@@ -146,6 +147,11 @@ class MainApp(tk.Frame):
     # displays login success
     def login_success(self):
         self.successCreate.place(x=0, y=0, relwidth=1)
+
+    # saves the current user's username to the text file to be able to access their information later
+    def save_username(self, u):
+        with open("current_user.txt", "w") as f:
+            f.write(u)
 
     # function to close window and open sign up window
     def close_and_open_signup(self):
