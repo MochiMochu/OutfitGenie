@@ -183,14 +183,14 @@ class HomeScreen(tk.Frame):
             print("no outfits found")
             self.display_empty()
         else:
-            self.display_carousel()
+            self.load_buttons()
         return items
 
     # loads images of the outfits from the database
     def load_images(self):
         u = self.get_user_id()
         user = u[0]
-        fetch_image_query = """SELECT image from clothingItems where user_id = ?"""
+        fetch_image_query = """SELECT image from clothingItems where user_id = ? LIMIT 5"""
         self.c.execute(fetch_image_query, (user,))
         record = self.c.fetchall()
         for index, row in enumerate(record):
@@ -199,9 +199,35 @@ class HomeScreen(tk.Frame):
             with open(photoPath, 'wb') as file:
                 file.write(row[0])  # Access the first element of the tuple (the image data)
 
-    # displaying outfits if there are outfits saved
-    def display_carousel(self):
-        print("displaying buttons")
+    # checks how many outfits are available by counting number of image files
+    def check_num_outfits(self):
+        image_path = "MochiMochu/OutfitGenie/outfit-images"  # line needs to be changed if not using git editor
+        counter = 0
+        for path in os.listdir(image_path):
+            if os.path.isfile(os.path.join(image_path, path)):
+                counter +=1
+       return counter
+
+    # loads as many buttons as there are images (up to 5)
+    def load_buttons(self):
+        total = self.check_num_outfits()
+        for i in total:
+            new_img = tk.PhotoImage(file="C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/outfit"+i+".png")
+            outfitFrame = tk.Frame(self.buttonsCont,
+                                highlightbackground="#BDBDBD",
+                                highlightthickness=3,
+                                bd=0)
+            outfitBtn= tk.Button(outfitFrame,
+                                image = new_img,
+                                width=150,
+                                height=250,
+                                bd=0,
+                                relief="flat",
+                                command=self.close_and_open_generate)
+        outfitBtn.pack()
+        outfitFrame.pack()
+        self.generateOutfitsBtnBorder.pack()
+        self.generateOutfitsBtn.pack()
 
     # displaying a suggestion to open generate menu if there are currently no outfits saved
     def display_empty(self):
