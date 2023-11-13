@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import sqlite3
 import re
-
+from opencage.geocoder import OpenCageGeocode
 
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
 class SignUpEntry(ttk.Entry):
@@ -17,11 +17,16 @@ class SignUpScreen(tk.Frame):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         super().__init__()
         self.parent = parent
+        self.geo_api = "57685bde1a7349b78f9c15209ac92d32" # api key for geosearching
 
         # initiating variables to be used
         self.SUusername = tk.StringVar(parent)
         self.SUpassword = tk.StringVar(parent)
         self.confirmedPassword = tk.StringVar(parent)
+        self.location = tk.StringVar(parent)
+        self.country = tk.StringVar(parent)
+        self.lat = 0
+        self.long = 0
         self.SUshow = tk.BooleanVar(parent, True)
         self.SUstyle = ttk.Style()  # for styling the ttk widgets
         self.FrameStyle = ttk.Style()
@@ -65,6 +70,20 @@ class SignUpScreen(tk.Frame):
                                                 show="",
                                                 textvariable=self.confirmedPassword,
                                                 width=45)
+
+        self.locationEntry = SignUpEntry(self.entryCont, "Town/City (for weather recommendations)", self.temp_location,
+                                                font=("Nirmala UI", 12),
+                                                background="#abd3cb",
+                                                foreground="#9c9c9c",
+                                                textvariable=self.location,
+                                                width=45)
+
+        self.countryEntry = SignUpEntry(self.entryCont, "Country", self.temp_country,
+                                                font=("Nirmala UI", 12),
+                                                background="#abd3cb",
+                                                foreground="#9c9c9c",
+                                                textvariable=self.country,
+                                                width=45)
         # configuring ttk widget styles
         self.SUstyle.configure("TCheckbutton", background="#ddedea", font=("Montserrat", 10))
         self.SUstyle.configure("TLabel", font=("Montserrat", 10), background="#ddedea")
@@ -90,9 +109,10 @@ class SignUpScreen(tk.Frame):
                                           text="✖ Password must contain one or more special symbols (_@$#?£!;/%^&*()+=~<>.,-)")
         self.SUpasswordSpace = ttk.Label(self.signUpCont, text="✖ Password must contain no whitespace characters")
         self.SUpasswordNoConfirm = ttk.Label(self.signUpCont, text="Error, password entries do not match.")
+        self.unknownLocation = ttk.Label(self.signUpCont, text="Error, location not found.")
 
         # account successful creation message widget
-        self.FrameStyle.configure("Success.TFrame", background="#9c9c9c", highlightbackground= "#9c9c9c", hightlightcolor="#9c9c9c") # configure frame bg for success message
+        self.FrameStyle.configure("Success.TFrame", background="#9c9c9c", highlightbackground="#9c9c9c", hightlightcolor="#9c9c9c") # configure frame bg for success message
         self.successCreate = ttk.Frame(parent, style="Success.TFrame")
         self.FrameStyle.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
         self.successMessage = ttk.Label(self.successCreate, text="Account created successfully", style="Success.TLabel")
@@ -102,9 +122,11 @@ class SignUpScreen(tk.Frame):
         self.subheading.pack(pady=(30, 0))
         self.headerCont.pack(pady=(150, 20))  # pack the frame containing the headers
 
-        self.SUuserEntry.pack(pady=20)
-        self.SUpasswordEntry.pack(pady=20)
-        self.confirmPasswordEntry.pack(pady=20)
+        self.SUuserEntry.pack(pady=10)
+        self.SUpasswordEntry.pack(pady=10)
+        self.confirmPasswordEntry.pack(pady=10)
+        self.locationEntry.pack(pady=10)
+        self.countryEntry.pack(pady=10)
         self.entryCont.pack(pady=20)  # pack the frame containing the user entry boxes
 
         self.SUshowPass.pack()
@@ -129,6 +151,14 @@ class SignUpScreen(tk.Frame):
         self.SUshow.set(False)
         self.confirmPasswordEntry.config(show="•")
 
+    # deletes the temporary text in location box
+    def temp_location(self, event):
+        self.locationEntry.delete(0, "end")
+
+    # deletes the temporary text in country box
+    def temp_country(self, event):
+        self.countryEntry.delete(0, "end")
+
     # warns the user if the username has already been taken, clears any password errors too
     def username_error(self):
         self.SUpasswordLonger.pack_forget()
@@ -150,6 +180,7 @@ class SignUpScreen(tk.Frame):
 
     # check if username has been taken
     def username_taken(self):
+        self.unknownLocation.pack_forget() # unpacks any errors from if the location wasn't valid
         u = self.SUusername.get()
         u = u.lower()
         p = self.SUpassword.get()
@@ -168,27 +199,6 @@ class SignUpScreen(tk.Frame):
             self.password_validity()
         else:
             self.username_error()
-
-    def send_pass(self):
-        u = self.SUusername.get()
-        p = self.SUpassword.get()
-        num = self.get_user_num()
-        u = u.lower()
-        conn = sqlite3.connect("user_information.db")
-        c = conn.cursor()
-        try:
-            c.execute("INSERT INTO logins VALUES (:id, :users, :passes)",
-                      {"id": num,
-                       "users": u,
-                       "passes": p}
-                      )
-            self.SUusernameTaken.pack_forget()
-        except sqlite3.IntegrityError as err:
-            if err.args != "UNIQUE constraint failed: logins.username":
-                self.username_error()
-        conn.commit()
-        conn.close()
-        self.save_username(u)
 
     # checks whether the password meets the requirements for a secure password and passes any flags to password_errors
     def password_validity(self):
@@ -218,11 +228,29 @@ class SignUpScreen(tk.Frame):
             flags.append("0")
         self.password_errors(flags)
 
+    # checks if the user's entered location is a valid place in the world
+    def validate_location(self):
+        self.unknownLocation.pack_forget()
+        geocoder = OpenCageGeocode(self.geo_api)
+        query = self.location.get() + ", "+self.country.get()
+        results = geocoder.geocode(query)
+        if results and len(results):
+            valid_types = ["village", "hamlet", "neighbourhood", "city", "town", "county", "region", "country"]
+            if 'components' in results[0] and '_type' in results[0]['components'] and \
+                    any(t in results[0]['components']['_type'] for t in valid_types):
+                self.lat = results[0]["geometry"]["lat"]
+                self.long = results[0]["geometry"]["lng"]
+                self.confirm_password()
+            else:
+                self.unknownLocation.pack()
+        else:
+            self.unknownLocation.pack()
+
     # packs the required error labels for any password criteria that aren't met
     def password_errors(self, flags):
         for num in flags:
             if num == "0":
-                self.confirm_password()
+                self.validate_location()
                 break
             else:
                 if num == "1":
@@ -240,6 +268,7 @@ class SignUpScreen(tk.Frame):
 
     # check if the password to be confirmed matches the one originally entered
     def confirm_password(self):
+        self.unknownLocation.pack_forget()
         p1 = self.SUpassword.get()
         p2 = self.confirmedPassword.get()
         if p1 != p2:
@@ -260,6 +289,32 @@ class SignUpScreen(tk.Frame):
             f.write(string_num)
         return user_number
 
+    # submits user details to the database
+    def send_pass(self):
+        u = self.SUusername.get()
+        p = self.SUpassword.get()
+        num = self.get_user_num()
+        u = u.lower()
+        latitude = self.lat
+        longitude = self.long
+        conn = sqlite3.connect("user_information.db")
+        c = conn.cursor()
+        try:
+            c.execute("INSERT INTO logins VALUES (:id, :users, :passes, :latitude, :longitude)",
+                      {"id": num,
+                       "users": u,
+                       "passes": p,
+                       "latitude": latitude,
+                       "longitude": longitude}
+                      )
+            self.SUusernameTaken.pack_forget()
+        except sqlite3.IntegrityError as err:
+            if err.args != "UNIQUE constraint failed: logins.username":
+                self.username_error()
+        conn.commit()
+        conn.close()
+        self.save_username(u)
+
     # saves the current user's username to the text file to be able to access their information later
     def save_username(self, u):
         with open("current_user.txt", "w") as f:
@@ -275,7 +330,7 @@ class SignUpScreen(tk.Frame):
         import homescreen
 
 
-
+# creates the window for the signup process
 new = tk.Tk()
 new.geometry("600x800+1000+300")
 new.title("Sign Up")

@@ -32,15 +32,28 @@ c = conn.cursor()
 #             FOREIGN KEY (user_id) REFERENCES logins(user_id)
 #             )
 #             """)
-def convert_binary_data(filename):
-    with open (filename, "rb") as file:
-        blobData = file.read()
-    return blobData
-occasions = [7,8]
-blob = convert_binary_data("C:/Users/jasmi/Downloads/tshirt.png")
+# def convert_binary_data(filename):
+#     with open (filename, "rb") as file:
+#         blobData = file.read()
+#     return blobData
+# occasions = [7,8]
+# blob = convert_binary_data("C:/Users/jasmi/Downloads/tshirt.png")
+#
+# c.execute(""" INSERT INTO clothingItems (item_id, user_id, clothing_type, primary_colour, fit, warmth, occasions, image)
+#             VALUES (0, "0", "t-shirt","white", "baggy", "cold", ?, ?)""", ( ','.join(map(str, occasions)), blob))
 
-c.execute(""" INSERT INTO clothingItems (item_id, user_id, clothing_type, primary_colour, fit, warmth, occasions, image)
-            VALUES (0, "0", "t-shirt","white", "baggy", "cold", ?, ?)""", ( ','.join(map(str, occasions)), blob))
+
+c.execute("""INSERT INTO Occasions (occasion_id, name) VALUES
+            (2, "Formal Party"),
+            (3, "Wedding"),
+            (4, "Festive/Holiday Party"),
+            (5, "Casual Wedding"),
+            (6, "Baby Shower"),
+            (7, "Family Event"),
+            (8, "Cruise"),
+            (9, "Job Interview"),
+            (10, "Work Function"),
+            (11, "Friend Meetup")""")
 
 conn.commit()
 conn.close()
