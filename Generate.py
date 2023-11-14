@@ -71,9 +71,10 @@ class GenerateMenu(tk.Frame):
         self.occasionStyle = ttk.Style()
         self.occasionStyle.configure("occasion.TMenubutton", font=("Arial", 20))
         self.occasionList = self.get_occasions()
+        self.sortedOccasions = self.sort_occasions()
         self.occasion = tk.StringVar(parent)
         self.occasion.set(self.occasionList[0])
-        self.chooseOccasion = ttk.OptionMenu(parent, self.occasion, *self.occasionList, style="occasion.TMenubutton")
+        self.chooseOccasion = ttk.OptionMenu(parent, self.occasion, *self.sortedOccasions, style="occasion.TMenubutton")
         self.chooseOccasion.config(width=30)
         self.chooseOccasion.place(x=60, y=550)
 
@@ -124,7 +125,33 @@ class GenerateMenu(tk.Frame):
 
     # sorting occasions in alphabetical order
     def sort_occasions(self):
-        print("Merge sort here")
+        occasions = self.occasionList
+        if len(occasions)>1:
+            midpoint=len(occasions)//2
+            leftHalf = occasions[midpoint:]
+            rightHalf = occasions[:midpoint]
+            mergeSort(leftHalf)
+            mergeSort(rightHalf)
+            i=0
+            j=0
+            k=0
+            while i < len(leftHalf) and j < len(rightHalf):
+              if leftHalf[i] < rightHalf[j]:
+                occasions[k]=leftHalf[i]
+                i+=1
+              else:
+                occasions[k]=rightHalf[j]
+                j+=1
+              k=k+1
+            while i < len(leftHalf):
+              occasions[k]=leftHalf[i]
+              i=i+1
+              k+=1
+            while j < len(rightHalf):
+              occasions[k]= rightHalf[j]
+              j+=1
+              k+=1
+        return occasions
 
 win = tk.Tk()
 win.title("OutfitGenie")
