@@ -38,6 +38,7 @@ class MainApp(tk.Frame):
                                          show="",
                                          textvariable=self.password,
                                          width=45)
+        # creating a canvas widget in which the logo image can be created
         self.logo = tk.Canvas(parent, width=300, height=160, background='#cdf3ff', highlightbackground="#cdf3ff")
         self.logo_image = self.get_logo()
         self.logo.create_image(152, 80, image=self.logo_image)
