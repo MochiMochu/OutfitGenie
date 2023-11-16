@@ -23,9 +23,9 @@ class MainApp(tk.Frame):
         # initiating variables to be used
         self.username = tk.StringVar(parent)
         self.password = tk.StringVar(parent)
-        self.show = tk.BooleanVar(parent, True)
-        self.style = ttk.Style()
-        self.FrameStyle = ttk.Style()
+        self.show = tk.BooleanVar(parent, True)  # Boolean variable to track if "show password" is checked
+        self.style = ttk.Style()  # creates instance of Style class to enable ttk widget editing later
+        self.FrameStyle = ttk.Style()  ] creates a separate instance for the account success message
         # initiating the widgets to be added to the interface
         self.userEntry = CustomEntry(parent, "Username", self.temp_username,
                                      font=("Nirmala UI", 12),
