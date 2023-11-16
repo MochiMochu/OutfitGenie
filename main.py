@@ -91,6 +91,7 @@ class MainApp(tk.Frame):
 
     # function to check whether the entered username has an existing record and calls other functinos accordingly
     def sign_in(self):
+        # fetches values from the variables associated with the entry boxes
         username = self.username.get()
         username = username.lower()
         password = self.password.get()
