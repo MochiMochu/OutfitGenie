@@ -89,7 +89,7 @@ class MainApp(tk.Frame):
         self.show.set(False)
         self.passwordEntry.config(show="•")
 
-    # gets values of entry boxes
+    # function to check whether the entered username has an existing record and calls other functinos accordingly
     def sign_in(self):
         username = self.username.get()
         username = username.lower()
