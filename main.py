@@ -105,11 +105,12 @@ class MainApp(tk.Frame):
         for item in answer:
             for value in item:
                 login_details.append(value)
+        # checks whether or not a matching record for the username is entered
         if items != 0:
-            self.check_password(password, login_details, username)  # checks the entered username against the record
+            self.check_password(password, login_details, username)  # password entered is checked against the record
         else:
-            self.username_not_found()
-            # schedule running of the function after 2 seconds
+            self.username_not_found()  # runs function to display an error message that the username was not found
+            # delays running of the function to open the sign up screenafter 2 seconds
             self.parent.after(2000, self.close_and_open_signup)
 
     # opens and resizes the transparent image for the app logo
