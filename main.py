@@ -170,7 +170,7 @@ class MainApp(tk.Frame):
             print(f"Error: {e}")
 
 
-# creates instance of the MainApp class and customises the window in which
+# creates instance of the MainApp class and customises the window in which it is loaded
 if __name__ == "__main__":
     window = tk.Tk()
     window.title("OutfitGenie")
