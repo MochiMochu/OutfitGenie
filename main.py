@@ -131,11 +131,11 @@ class MainApp(tk.Frame):
     def check_password(self, tb_checked, login_details, username):
         if tb_checked == login_details[1]:
             self.passwordNoMatch.pack_forget()  # removes the label if the password didn't match
-            self.save_username(username)
-            self.login_success()
-            self.parent.after(1500, self.close_and_open_home)
+            self.save_username(username)  # saves username to the current user's file
+            self.login_success()  # display login success message
+            self.parent.after(1500, self.close_and_open_home)  # opens home window after a delay
         else:
-            self.password_error()
+            self.password_error()  # display error message if password is wrong
 
     # function to display an error if the user enters the wrong password
     def password_error(self):
