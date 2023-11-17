@@ -112,7 +112,10 @@ class SignUpScreen(tk.Frame):
         self.unknownLocation = ttk.Label(self.signUpCont, text="Error, location not found.")
 
         # account successful creation message widget
-        self.FrameStyle.configure("Success.TFrame", background="#9c9c9c", highlightbackground="#9c9c9c", hightlightcolor="#9c9c9c") # configure frame bg for success message
+        self.FrameStyle.configure("Success.TFrame",
+                                  background="#9c9c9c",
+                                  highlightbackground="#9c9c9c",
+                                  hightlightcolor="#9c9c9c") # configure frame bg for success message
         self.successCreate = ttk.Frame(parent, style="Success.TFrame")
         self.FrameStyle.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
         self.successMessage = ttk.Label(self.successCreate, text="Account created successfully", style="Success.TLabel")
