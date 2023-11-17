@@ -269,16 +269,16 @@ class SignUpScreen(tk.Frame):
     # check if the password to be confirmed matches the one originally entered
     def confirm_password(self):
         self.unknownLocation.pack_forget()
-        p1 = self.SUpassword.get()
-        p2 = self.confirmedPassword.get()
+        p1 = self.SUpassword.get()  # retrieves the first password entered
+        p2 = self.confirmedPassword.get()  # retrieves the second password entered
         if p1 != p2:
-            self.SUpasswordNoConfirm.pack()
+            self.SUpasswordNoConfirm.pack()  # packs the error message that the passwords don't match
         else:
-            self.SUpasswordNoConfirm.pack_forget()
-            self.send_pass()
-            self.account_success()
-            self.parent.after(1500, self.open_homescreen)
-
+            self.SUpasswordNoConfirm.pack_forget()  # removes any previously existing error messages
+            self.send_pass()  # saves details to database
+            self.account_success()  # shows success message
+            self.parent.after(1500, self.open_homescreen)  # calls function to close current window and open the home screen 
+ 
     # retrieves the number of users already signed up in order to create the next user's ID
     def get_user_num(self):
         with open("user_num.txt") as f:
