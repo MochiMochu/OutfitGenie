@@ -235,11 +235,11 @@ class SignUpScreen(tk.Frame):
         query = self.location.get() + ", "+self.country.get()
         results = geocoder.geocode(query)
         if results and len(results):
-            valid_types = ["village", "hamlet", "neighbourhood", "city", "town", "county", "region", "country"]
+            valid_types = ["village", "hamlet", "neighbourhood", "city", "town", "county", "region", "country"]  # valid types of location
             if 'components' in results[0] and '_type' in results[0]['components'] and \
-                    any(t in results[0]['components']['_type'] for t in valid_types):
-                self.lat = results[0]["geometry"]["lat"]
-                self.long = results[0]["geometry"]["lng"]
+                    any(t in results[0]['components']['_type'] for t in valid_types):  # checks if the location is part of the accepted types 
+                self.lat = results[0]["geometry"]["lat"]  # saves the latitude
+                self.long = results[0]["geometry"]["lng"]  # saved the longitude
                 self.confirm_password()
             else:
                 self.unknownLocation.pack()
