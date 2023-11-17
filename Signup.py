@@ -308,12 +308,12 @@ class SignUpScreen(tk.Frame):
                        "longitude": longitude}
                       )
             self.SUusernameTaken.pack_forget()
-        except sqlite3.IntegrityError as err:
+        except sqlite3.IntegrityError as err:  # checks again if the username already exists
             if err.args != "UNIQUE constraint failed: logins.username":
                 self.username_error()
         conn.commit()
         conn.close()
-        self.save_username(u)
+        self.save_username(u)  # saves the username to the current user file for later record retrieval
 
     # saves the current user's username to the text file to be able to access their information later
     def save_username(self, u):
