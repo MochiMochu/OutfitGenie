@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import sqlite3
 import re
-from opencage.geocoder import OpenCageGeocode
+from opencage.geocoder import OpenCageGeocode  # imports the module for the weather API
 
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
 class SignUpEntry(ttk.Entry):
