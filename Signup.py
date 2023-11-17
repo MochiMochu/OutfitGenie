@@ -23,10 +23,10 @@ class SignUpScreen(tk.Frame):
         self.SUusername = tk.StringVar(parent)
         self.SUpassword = tk.StringVar(parent)
         self.confirmedPassword = tk.StringVar(parent)
-        self.location = tk.StringVar(parent)
+        self.location = tk.StringVar(parent)   # tk variables for storing location for weather in the user's area
         self.country = tk.StringVar(parent)
-        self.lat = 0
-        self.long = 0
+        self.lat = 0  # longitude to check if the location exists
+        self.long = 0  # latitude " "
         self.SUshow = tk.BooleanVar(parent, True)
         self.SUstyle = ttk.Style()  # for styling the ttk widgets
         self.FrameStyle = ttk.Style()
