@@ -30,7 +30,7 @@ class HomeScreen(tk.Frame):
         super().__init__()
         self.parent = parent
 
-        # initiating the database calls
+        # initiating the variables for easy database operations
         conn = sqlite3.connect("user_information.db")
         self.c = conn.cursor()
 
@@ -39,13 +39,13 @@ class HomeScreen(tk.Frame):
         self.latitude = self.get_latitude()
         self.longitude = self.get_longitude()
         self.weather_url = "http://api.weatherapi.com/v1/forecast.json?q=" + str(self.latitude[0]) + "%20" + str(
-            self.longitude[0]) + "&days=1&key=" + self.api_key
+            self.longitude[0]) + "&days=1&key=" + self.api_key  # url to be used to fetch the weather data
 
         # initiate images
         self.logo = tk.Canvas(parent, width=160, height=90, background='#f9fdf7', highlightbackground="#f9fdf7")
-        self.logo_image = self.get_logo()
-        self.logo.create_image(82, 45, image=self.logo_image)
-        self.newOutfit = tk.PhotoImage(file="NewOutfit.png")
+        self.logo_image = self.get_logo()  # gets image of the logo
+        self.logo.create_image(82, 45, image=self.logo_image)  # create an image of the logo in the canvas 
+        self.newOutfit = tk.PhotoImage(file="NewOutfit.png")  # loads in the image of the icon that prompts the user to create a new outfit
 
         # initiate frames for navigation buttons and carousel
         self.navigation = tk.Frame(parent, width=600, height=150, background="#f9fdf7")
