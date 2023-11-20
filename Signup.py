@@ -13,13 +13,14 @@ class SignUpEntry(ttk.Entry):
 
 
 class SignUpScreen(tk.Frame):
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, open_home, *args, **kwargs):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         super().__init__()
         self.parent = parent
         self.geo_api = "57685bde1a7349b78f9c15209ac92d32" # api key for geosearching
 
         # initiating variables to be used
+        self.open_homescreen = open_home
         self.SUusername = tk.StringVar(parent)
         self.SUpassword = tk.StringVar(parent)
         self.confirmedPassword = tk.StringVar(parent)
@@ -327,16 +328,6 @@ class SignUpScreen(tk.Frame):
     def account_success(self):
         self.successCreate.place(x=0, y=0, relwidth=1)
 
-    # go to home screen
-    def open_homescreen(self):
-        self.parent.destroy()
-        import homescreen
 
 
-# creates the window for the signup process
-new = tk.Tk()
-new.geometry("600x800+1000+300")
-new.title("Sign Up")
-new.configure(background="#ddedea")
-SignUpScreen(new).pack(expand=True)
-new.mainloop()
+
