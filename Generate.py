@@ -69,12 +69,12 @@ class GenerateMenu(tk.Frame):
 
         # drop down menu to select the occasion for consideration by the generation algorithm
         self.occasionStyle = ttk.Style()
-        self.occasionStyle.configure("occasion.TMenubutton", font=("Arial", 20))
-        self.occasionList = self.get_occasions()
-        self.sortedOccasions = self.sort_occasions()
+        self.occasionStyle.configure("occasion.TMenubutton", font=("Arial", 20))  # sets the style for the drop down menu
+        self.occasionList = self.get_occasions()  # fetches the list of occasions in the database
+        self.sortedOccasions = self.sort_occasions()  # sorts the occasions using a merge sort
         self.occasion = tk.StringVar(parent)
-        self.occasion.set(self.occasionList[0])
-        self.chooseOccasion = ttk.OptionMenu(parent, self.occasion, *self.sortedOccasions, style="occasion.TMenubutton")
+        self.occasion.set(self.occasionList[0])  # sets the default text of the menu to be "Select Occasion"
+        self.chooseOccasion = ttk.OptionMenu(parent, self.occasion, *self.occasionList, style="occasion.TMenubutton")
         self.chooseOccasion.config(width=30)
         self.chooseOccasion.place(x=60, y=550)
 
