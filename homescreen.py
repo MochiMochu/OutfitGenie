@@ -304,9 +304,9 @@ class HomeScreen(tk.Frame):
 
     # loads images of the outfits from the database
     def load_images(self):
-        u = self.get_user_id()
-        user = u[0]
-        fetch_image_query = """SELECT image from clothingItems where user_id = ? LIMIT 5"""
+        u = self.get_user_id()  # fetches user id from current user file
+        user = u[0] 
+        fetch_image_query = """SELECT image from clothingItems where user_id = ? LIMIT 5"""  
         self.c.execute(fetch_image_query, (user,))
         record = self.c.fetchall()
         for index, row in enumerate(record):
