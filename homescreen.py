@@ -350,8 +350,10 @@ class HomeScreen(tk.Frame):
 
     # display weather
     def display_weather(self):
-        fetch = requests.get(self.weather_url)
-        response = fetch.json()
+        fetch = requests.get(self.weather_url)  # using python requests package to access the url
+        response = fetch.json() # fetches the json response
+        
+        # accesses the necessary aspects of the json file and sets them as temp variables to be returned
         location = response["location"]["name"]
         icon = response["current"]["condition"]["icon"]
         currentTemp = response["current"]["temp_c"]
@@ -364,10 +366,10 @@ class HomeScreen(tk.Frame):
 
     # loads the weather icon from the given url
     def load_weather_icon(self):
-        url = "https:" + self.icon
+        url = "https:" + self.icon  # accesses the url of the image file
         response = requests.get(url)
         image_data = response.content
-        image = Image.open(BytesIO(image_data))
+        image = Image.open(BytesIO(image_data))  # opens the image to be used
         return ImageTk.PhotoImage(image)
 
 
