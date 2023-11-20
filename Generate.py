@@ -20,7 +20,7 @@ class GenerateMenu(tk.Frame):
         self.logo.create_image(82, 45, image=self.logo_image)
         self.newOutfit = tk.PhotoImage(file="NewOutfit.png")
 
-        # initiate frames for navigation buttons and carousel
+        # initiate frame for navigation buttons
         self.navigation = tk.Frame(parent, width=600, height=150, background="#dcf5df")
 
         # initiate navigation buttons
