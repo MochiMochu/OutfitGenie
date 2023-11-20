@@ -123,7 +123,7 @@ class GenerateMenu(tk.Frame):
         occasions.insert(0, "Select Occasion")
         return occasions
 
-    # sorting occasions in alphabetical order
+    # sorting occasions in alphabetical order using merge sort
     def sort_occasions(self):
         occasions = self.occasionList
         if len(occasions)>1:
