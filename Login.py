@@ -4,6 +4,7 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 import sqlite3
 import time
+import bcrypt
 
 
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
@@ -16,32 +17,66 @@ class CustomEntry(ttk.Entry):
 
 # initiating the main window of the application
 class LoginScreen(tk.Frame):
-    def __init__(self, parent, open_signup, open_home, *args, **kwargs):
+    def __init__(self, parent, user_logged_in, open_signup, open_home, close_app, *args, **kwargs):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         super().__init__()
         self.parent = parent
-        # initiating variables to be used
-        self.username = tk.StringVar(parent)
-        self.password = tk.StringVar(parent)
-        self.show = tk.BooleanVar(parent, True)  # Boolean variable to track if "show password" is checked
+        self.window = None
+
+        # necessary variables that aren't widgets
         self.style = ttk.Style()  # creates instance of Style class to enable ttk widget editing later
         self.FrameStyle = ttk.Style()  # creates a separate instance for the account success message
         self.close_and_open_home = open_home
         self.close_and_open_signup = open_signup
+        self.close_app = close_app
+        self.alert_login = user_logged_in
+
+        # initiating an instance variable for every widget
+        self.username = None
+        self.password = None
+        self.show = None
+        self.userEntry = None
+        self.passwordEntry = None
+        self.logo = None
+        self.logo_image = None
+        self.btnCont = None
+        self.showPass = None
+        self.loginButton = None
+        self.usernameNotFound = None
+        self.usernameTaken = None
+        self.passwordNoMatch = None
+        self.successLogin = None
+        self.successMessage = None
+
+    # starts this window so that it is placed on the topmost level of all the other windows
+    def start(self):
+        self.window = tk.Toplevel(self.parent)
+        self.window.protocol("WM_DELETE_WINDOW", self.close_app)
+        self.window.title("OutfitGenie")
+        self.window.configure(bg="#cdf3ff")
+        self.window.geometry("600x800+1000+300")
+        self.create_widgets()
+
+    def create_widgets(self):
+        # initiating variables to be used
+        self.username = tk.StringVar(self.window)
+        self.password = tk.StringVar(self.window)
+        self.show = tk.BooleanVar(self.window, True)  # Boolean variable to track if "show password" is checked
+
         # initiating the widgets to be added to the interface
-        self.userEntry = CustomEntry(parent, "Username", self.temp_username,
+        self.userEntry = CustomEntry(self.window, "Username", self.temp_username,
                                      font=("Nirmala UI", 12),
                                      foreground="#989898",
                                      textvariable=self.username,
                                      width=45)
-        self.passwordEntry = CustomEntry(parent, "Password", self.temp_password,
+        self.passwordEntry = CustomEntry(self.window, "Password", self.temp_password,
                                          font=("Nirmala UI", 12),
                                          foreground="#989898",
                                          show="",
                                          textvariable=self.password,
                                          width=45)
         # creating a canvas widget in which the logo image can be created
-        self.logo = tk.Canvas(parent, width=300, height=160, background='#cdf3ff', highlightbackground="#cdf3ff")
+        self.logo = tk.Canvas(self.window, width=300, height=160, background='#cdf3ff', highlightbackground="#cdf3ff")
         self.logo_image = self.get_logo()
         self.logo.create_image(152, 80, image=self.logo_image)
 
@@ -50,7 +85,7 @@ class LoginScreen(tk.Frame):
         self.style.configure("TCheckbutton", background="#cdf3ff", font = ("Montserrat", 10))
         self.style.configure("TLabel", font= ("Nirmala UI", 10), background="#cdf3ff")
         self.style.configure("TButton", font= ("Montserrat", 10))
-        self.btnCont = ttk.Frame(parent, height=80, width=200)
+        self.btnCont = ttk.Frame(self.window, height=80, width=200)
         self.showPass = ttk.Checkbutton(self.btnCont,
                                         text="Show password",
                                         command=self.toggle_password,
@@ -68,7 +103,7 @@ class LoginScreen(tk.Frame):
         # account successful creation message widget
         self.FrameStyle.configure("Success.TFrame", background="#9c9c9c", highlightbackground="#9c9c9c",
                                   hightlightcolor="#9c9c9c")  # configure frame bg for success message
-        self.successLogin = ttk.Frame(parent, style="Success.TFrame")
+        self.successLogin = ttk.Frame(self.window, style="Success.TFrame")
         self.FrameStyle.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
         self.successMessage = ttk.Label(self.successLogin, text="Logged in", style="Success.TLabel")
 
@@ -91,15 +126,15 @@ class LoginScreen(tk.Frame):
         self.show.set(False)
         self.passwordEntry.config(show="•")
 
-    # function to check whether the entered username has an existing record and calls other functinos accordingly
+    # function to check whether the entered username has an existing record and calls other functions accordingly
     def sign_in(self):
         # fetches values from the variables associated with the entry boxes
         username = self.username.get()
         username = username.lower()
         password = self.password.get()
-        conn = sqlite3.connect("user_information.db")
+        conn = sqlite3.connect("OutfitGenieInfo.db")
         c = conn.cursor()
-        select_query = "select username, password from logins where username = ?"
+        select_query = "SELECT * FROM Users WHERE Username = ?"
         c.execute(select_query, (username,))
         answer = c.fetchall()
         conn.close()
@@ -131,13 +166,26 @@ class LoginScreen(tk.Frame):
 
     # checking if the password matches the username in the database
     def check_password(self, tb_checked, login_details, username):
-        if tb_checked == login_details[1]:
+        hash_check = self.hash_password_for_validation(username, tb_checked) # calls function to hash the user's password attempt
+        if hash_check == login_details[2]:  # checks if the hashed value matches the record in the database
             self.passwordNoMatch.pack_forget()  # removes the label if the password didn't match
-            self.save_username(username)  # saves username to the current user's file
+            self.save_user(login_details[0])  # saves username to the current user's file
             self.login_success()  # display login success message
+            self.alert_login()
             self.parent.after(1500, self.close_and_open_home)  # opens home window after a delay
         else:
             self.password_error()  # display error message if password is wrong
+
+    # hashes the user's password attempt using the salt from their username record to check if it matches the previously hashed value
+    def hash_password_for_validation(self, username, password):
+        password = password.encode("utf-8")  # encodes the password to be able to put it into bytes
+        conn = sqlite3.connect("OutfitGenieInfo.db")  # connect to database
+        c = conn.cursor()
+        c.execute("""SELECT Salt FROM Users WHERE Username=?""", (username,))  # retrieves salt from user's record
+        records = c.fetchall()
+        salt = records[0][0]
+        hashed = bcrypt.hashpw(password, salt)  # hashes the user's password attempt with the salt
+        return hashed
 
     # function to display an error if the user enters the wrong password
     def password_error(self):
@@ -154,6 +202,6 @@ class LoginScreen(tk.Frame):
         self.successLogin.place(x=0, y=0, relwidth=1)
 
     # saves the current user's username to the text file to be able to access their information later
-    def save_username(self, u):
+    def save_user(self, u):
         with open("current_user.txt", "w") as f:
             f.write(u)

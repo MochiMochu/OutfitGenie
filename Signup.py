@@ -3,6 +3,8 @@ from tkinter import ttk
 import sqlite3
 import re
 from opencage.geocoder import OpenCageGeocode  # imports the module for the weather API
+import bcrypt
+
 
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
 class SignUpEntry(ttk.Entry):
@@ -13,30 +15,80 @@ class SignUpEntry(ttk.Entry):
 
 
 class SignUpScreen(tk.Frame):
-    def __init__(self, parent, open_home, *args, **kwargs):
+    def __init__(self, parent, user_logged_in, open_home, close_app, *args, **kwargs):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         super().__init__()
         self.parent = parent
         self.geo_api = "57685bde1a7349b78f9c15209ac92d32" # api key for geosearching
+        self.window = None
 
         # initiating variables to be used
         self.open_homescreen = open_home
-        self.SUusername = tk.StringVar(parent)
-        self.SUpassword = tk.StringVar(parent)
-        self.confirmedPassword = tk.StringVar(parent)
-        self.location = tk.StringVar(parent)   # tk variables for storing location for weather in the user's area
-        self.country = tk.StringVar(parent)
-        self.lat = 0  # longitude to check if the location exists
-        self.long = 0  # latitude " "
-        self.SUshow = tk.BooleanVar(parent, True)
+        self.close_app = close_app
         self.SUstyle = ttk.Style()  # for styling the ttk widgets
         self.FrameStyle = ttk.Style()
+        self.alert_login = user_logged_in
+
+        # initiating instance variables to be modified later
+        self.SUusername = None
+        self.SUpassword = None
+        self.confirmedPassword = None
+        self.location = None
+        self.country = None
+        self.lat = 0  # longitude to check if the location exists
+        self.long = 0  # latitude " "
+        self.SUshow = None
+        self.headerCont = None
+        self.entryCont = None
+        self.signUpCont = None
+        self.heading = None
+        self.subheading = None
+        self.SUuserEntry = None
+        self.SUpasswordEntry = None
+        self.confirmPasswordEntry = None
+        self.locationEntry = None
+        self.countryEntry = None
+        self.SUshowPass = None
+        self.SUsignUpButton = None
+
+        # initiating the labels for error messages
+        self.SUusernameTaken = None
+        self.SUpasswordNoMatch = None
+        self.SUpasswordLonger = None
+        self.SUpasswordLower = None
+        self.SUpasswordUpper = None
+        self.SUpasswordNum = None
+        self.SUpasswordSymbol = None
+        self.SUpasswordSpace = None
+        self.SUpasswordNoConfirm = None
+        self.unknownLocation = None
+
+        self.successCreate = None
+        self.successMessage = None
+
+    # starts this window so that it is placed on the topmost level of all the other windows
+    def start(self):
+        self.window = tk.Toplevel(self.parent)
+        self.window.title("OutfitGenie")
+        self.window.protocol("WM_DELETE_WINDOW", self.close_app)
+        self.window.configure(bg="#ddedea")
+        self.window.geometry("600x800+1000+300")
+        self.create_widgets()
+
+    def create_widgets(self):
         self.SUstyle.configure("TFrame", background="#ddedea")  # configure the frame background
+        self.SUusername = tk.StringVar(self.window)
+        self.SUpassword = tk.StringVar(self.window)
+        self.confirmedPassword = tk.StringVar(self.window)
+        self.location = tk.StringVar(self.window)   # tk variables for storing location for weather in the user's area
+        self.country = tk.StringVar(self.window)
+
+        self.SUshow = tk.BooleanVar(self.window, True)
 
         # initiating the frames containing the widgets
-        self.headerCont = ttk.Frame(parent, height=150, width=600, style="TFrame")
-        self.entryCont = ttk.Frame(parent, height=150, width=600, style="TFrame")
-        self.signUpCont = ttk.Frame(parent, height=150, width=400, style="TFrame")
+        self.headerCont = ttk.Frame(self.window, height=150, width=600, style="TFrame")
+        self.entryCont = ttk.Frame(self.window, height=150, width=600, style="TFrame")
+        self.signUpCont = ttk.Frame(self.window, height=150, width=400, style="TFrame")
 
         # initiating the headings for the screen
         self.heading = ttk.Label(self.headerCont,
@@ -117,7 +169,7 @@ class SignUpScreen(tk.Frame):
                                   background="#9c9c9c",
                                   highlightbackground="#9c9c9c",
                                   hightlightcolor="#9c9c9c") # configure frame bg for success message
-        self.successCreate = ttk.Frame(parent, style="Success.TFrame")
+        self.successCreate = ttk.Frame(self.window, style="Success.TFrame")
         self.FrameStyle.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
         self.successMessage = ttk.Label(self.successCreate, text="Account created successfully", style="Success.TLabel")
 
@@ -188,9 +240,9 @@ class SignUpScreen(tk.Frame):
         u = self.SUusername.get()
         u = u.lower()
         p = self.SUpassword.get()
-        conn = sqlite3.connect("user_information.db")
+        conn = sqlite3.connect("OutfitGenieInfo.db")
         c = conn.cursor()
-        select_query = "select * from logins where username = ?"
+        select_query = "SELECT * FROM Users where Username = ?"
         c.execute(select_query, (u,))
         answer = c.fetchall()
         conn.close()
@@ -281,43 +333,57 @@ class SignUpScreen(tk.Frame):
             self.SUpasswordNoConfirm.pack_forget()  # removes any previously existing error messages
             self.send_pass()  # saves details to database
             self.account_success()  # shows success message
+            self.alert_login()
             self.parent.after(1500, self.open_homescreen)  # calls function to close current window and open the home screen 
  
     # retrieves the number of users already signed up in order to create the next user's ID
     def get_user_num(self):
-        with open("user_num.txt") as f:
-            user_number = int(f.readline())
-        with open("user_num.txt", "w") as f:
-            new_num = user_number + 1
-            string_num = str(new_num)
-            f.write(string_num)
+        conn = sqlite3.connect("OutfitGenieInfo.db")
+        c = conn.cursor()
+        c.execute("""SELECT User_ID FROM Users WHERE User_ID=(SELECT max(user_id) FROM Users)""")
+        record = c.fetchall()
+        conn.close()
+        if record:
+            user_number = record[0]
+            user_number += 1
+            print(user_number)
+        else:
+            user_number = 1
         return user_number
 
     # submits user details to the database
     def send_pass(self):
         u = self.SUusername.get()
         p = self.SUpassword.get()
+        h_password, salt = self.hash_password_for_storage(p)
         num = self.get_user_num()
         u = u.lower()
         latitude = self.lat
         longitude = self.long
-        conn = sqlite3.connect("user_information.db")
+        conn = sqlite3.connect("OutfitGenieInfo.db")
         c = conn.cursor()
         try:
-            c.execute("INSERT INTO logins VALUES (:id, :users, :passes, :latitude, :longitude)",
+            c.execute("INSERT INTO Users VALUES (:id, :users, :passes, :latitude, :longitude, :salt)",
                       {"id": num,
                        "users": u,
-                       "passes": p,
+                       "passes": h_password,
                        "latitude": latitude,
-                       "longitude": longitude}
+                       "longitude": longitude,
+                       "salt": salt}
                       )
             self.SUusernameTaken.pack_forget()
         except sqlite3.IntegrityError as err:  # checks again if the username already exists
-            if err.args != "UNIQUE constraint failed: logins.username":
+            if err.args != "UNIQUE constraint failed: Users.username":
                 self.username_error()
         conn.commit()
         conn.close()
         self.save_username(u)  # saves the username to the current user file for later record retrieval
+
+    def hash_password_for_storage(self, password):
+        password = password.encode("utf-8")
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password, salt)
+        return hashed, salt
 
     # saves the current user's username to the text file to be able to access their information later
     def save_username(self, u):

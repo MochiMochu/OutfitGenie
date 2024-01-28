@@ -9,48 +9,96 @@ import json
 from datetime import datetime
 from io import BytesIO
 
-# clearing previously added images of outfits
-directory_path = "C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/"
-
-# List all files and subdirectories in the directory
-contents = os.listdir(directory_path)
-
-# Remove each item within the directory
-for item in contents:
-    item_path = os.path.join(directory_path, item)
-    if os.path.isfile(item_path):
-        os.remove(item_path)  # Remove files
-    elif os.path.isdir(item_path):
-        shutil.rmtree(item_path)  # Remove subdirectories and their contents
-
 
 class HomeScreen(tk.Frame):
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, open_generate, open_settings, open_wardrobe, close_app, *args, **kwargs):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         super().__init__()
         self.parent = parent
+        self.window = None
+
+        # variables for opening new windows
+        self.close_and_open_generate = open_generate
+        self.close_and_open_settings = open_settings
+        self.close_and_open_wardrobe = open_wardrobe
+        self.close_app = close_app
 
         # initiating the variables for easy database operations
-        conn = sqlite3.connect("user_information.db")
+        conn = sqlite3.connect("OutfitGenieInfo.db")
         self.c = conn.cursor()
 
-        # variables for fetching weather
+        # initiating instance variables to be modified later
+        self.logo = None
+        self.logo_image = None
+        self.newOutfit = None
+        self.navigation = None
+        self.outfitHeadingCont = None
+        self.carouselCont = None
+        self.carouselCanvas = None
+        self.buttonsCont = None
+        self.homeBtn = None
+        self.homeBtnImg = None
+        self.generateBtn = None
+        self.generateBtnImg = None
+        self.wardrobeBtn = None
+        self.wardrobeBtnImg = None
+        self.settingsBtn = None
+        self.settingsBtnImg = None
+        self.outfitHeading = None
+        self.scrollbar = None
+        self.generateOutfitsBtnBorder = None
+        self.generateOutfitsBtn = None
+        self.outfitsAvailable = None
+        self.carouselButton = None
+        self.place = None
+        self.icon = None
+        self.currentTemp = None
+        self.weatherDesc = None
+        self.highTemp = None
+        self.lowTemp = None
+        self.feelsLike = None
+        self.weatherCont = None
+        self.weatherHeaderFrame = None
+        self.weatherIconFrame = None
+        self.weatherTempFrame = None
+        self.weatherHeader = None
+        self.locationHeader = None
+        self.weatherIcon = None
+        self.weatherLabel = None
+        self.displayTemp = None
+        self.weatherSummary = None
+        self.maxTemp = None
+        self.minTemp = None
+        self.realFeel = None
+
+    # starts this window so that it is placed on the topmost level of all the other windows
+    def start(self):
+        self.window = tk.Toplevel(self.parent)
+        self.window.protocol ("WM_DELETE_WINDOW", self.close_app)
+        self.window.title("OutfitGenie")
+        self.window.configure(bg="#f9fdf7")
+        self.window.geometry("600x800+1000+300")
+        self.create_widgets()
+
+    # fetches the variables necessary to display the weather forecast for the user's area
+    def get_weather_variables(self):
         self.api_key = "45303768bf0f4c00898183710231211"
         self.latitude = self.get_latitude()
         self.longitude = self.get_longitude()
         self.weather_url = "http://api.weatherapi.com/v1/forecast.json?q=" + str(self.latitude[0]) + "%20" + str(
             self.longitude[0]) + "&days=1&key=" + self.api_key  # url to be used to fetch the weather data
 
+    def create_widgets(self):
         # initiate images
-        self.logo = tk.Canvas(parent, width=160, height=90, background='#f9fdf7', highlightbackground="#f9fdf7")
+        self.logo = tk.Canvas(self.window, width=160, height=90, background='#f9fdf7', highlightbackground="#f9fdf7")
         self.logo_image = self.get_logo()  # gets image of the logo
         self.logo.create_image(82, 45, image=self.logo_image)  # create an image of the logo in the canvas 
         self.newOutfit = tk.PhotoImage(file="NewOutfit.png")  # loads in the image of the icon that prompts the user to create a new outfit
 
         # initiate frames for navigation buttons and carousel
-        self.navigation = tk.Frame(parent, width=600, height=150, background="#f9fdf7")
-        self.outfitHeadingCont = tk.Frame(parent, width=600, height=150, background="#f9fdf7")
-        self.carouselCont = tk.Frame(parent, height=250)
+        self.navigation = tk.Frame(self.window, width=600, height=150, background="#f9fdf7")
+        self.outfitHeadingCont = tk.Frame(self.window, width=600, height=150, background="#f9fdf7")
+        self.carouselCont = tk.Frame(self.window, height=250)
         self.carouselCanvas = tk.Canvas(self.carouselCont, height=260, background='#f9fdf7', highlightthickness=0)
         self.buttonsCont = ttk.Frame(self.carouselCanvas)
 
@@ -111,9 +159,9 @@ class HomeScreen(tk.Frame):
         self.carouselCanvas.configure(xscrollcommand=self.scrollbar.set)
 
         # checking for outfits
+        self.outfitsAvailable = self.check_outfits()
         self.load_images()
         self.organise_images()
-        self.outfitsAvailable = self.check_outfits()
         if self.outfitsAvailable != 0:
             for i in range(self.outfitsAvailable):
                 self.temp_image = tk.PhotoImage(
@@ -134,7 +182,7 @@ class HomeScreen(tk.Frame):
         self.place, self.icon, self.currentTemp, self.weatherDesc, self.highTemp, self.lowTemp, self.feelsLike = self.display_weather()
 
         # frames for weather forecast widget
-        self.weatherCont = tk.Frame(parent, width=100, height=360, background="#e0f7ff")
+        self.weatherCont = tk.Frame(self.window, width=100, height=360, background="#e0f7ff")
         self.weatherHeaderFrame = tk.Frame(self.weatherCont, width=300, height=120, background="#e0f7ff")
         self.weatherIconFrame = tk.Frame(self.weatherCont, width=300, height=120, background="#e0f7ff")
         self.weatherTempFrame = tk.Frame(self.weatherCont, width=300, height=120, background="#e0f7ff")
@@ -212,6 +260,21 @@ class HomeScreen(tk.Frame):
         self.weatherIconFrame.pack(side=tk.TOP)
         self.weatherTempFrame.pack()
 
+    # manages and clears the directories before loading any outfit images
+    def clear_directories(self):
+        # clearing previously added images of outfits
+        directory_path = "C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/"
+
+        # List all files and subdirectories in the directory
+        contents = os.listdir(directory_path)
+
+        # Remove each item within the directory
+        for item in contents:
+            item_path = os.path.join(directory_path, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)  # Remove files
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)  # Remove subdirectories and their contents
 
     # opens and resizes the transparent image for the app logo
     def get_logo(self):
@@ -219,52 +282,17 @@ class HomeScreen(tk.Frame):
         resized_image = ImageTk.PhotoImage(img.resize((160, 90)))
         return resized_image
 
-    # function to close window and open generation menu
-    def close_and_open_generate(self):
-        self.c.close()
-        self.parent.destroy()
-        try:
-            import Generate
-        except Exception as e:
-            print(f"Error: {e}")
-
-    # function to close window and open generation menu
-    def close_and_open_wardrobe(self):
-        self.c.close()
-        self.parent.destroy()
-        try:
-            import Wardrobe
-        except Exception as e:
-            print(f"Error: {e}")
-
-    # function to close window and open generation menu
-    def close_and_open_settings(self):
-        self.c.close()
-        self.parent.destroy()
-        try:
-            import Settings
-        except Exception as e:
-            print(f"Error: {e}")
-
     # get id of user to load any saved outfits
     def get_user_id(self):
         with open("current_user.txt") as f:
-            username = f.readline()
-        select_query = "select user_id from logins where username = ?"
-        self.c.execute(select_query, (username,))
-        contents = self.c.fetchall()
-        user_id = []
-        for item in contents:
-            for value in item:
-                user_id.append(value)
+            user_id = f.readline()
         return user_id
 
     # function to get latitude of user's location
     def get_latitude(self):
-        u = self.get_user_id()
-        user = u[0]
-        lat_query = """SELECT latitude from logins WHERE user_id = ?"""
-        self.c.execute(lat_query, (user,))
+        user_id = self.get_user_id()
+        lat_query = """SELECT Latitude from Users WHERE User_ID = ?"""
+        self.c.execute(lat_query, (user_id,))
         result = self.c.fetchall()
         latitude = []
         for i in result:
@@ -272,12 +300,11 @@ class HomeScreen(tk.Frame):
                 latitude.append(value)
         return latitude
 
-    # function to get latitude of user's location
+    # function to get longitude of user's location
     def get_longitude(self):
-        u = self.get_user_id()
-        user = u[0]
-        lng_query = """SELECT longitude from logins WHERE user_id = ?"""
-        self.c.execute(lng_query, (user,))
+        user_id = self.get_user_id()
+        lng_query = """SELECT Longitude from Users WHERE User_ID = ?"""
+        self.c.execute(lng_query, (user_id,))
         result = self.c.fetchall()
         longitude = []
         for i in result:
@@ -287,10 +314,9 @@ class HomeScreen(tk.Frame):
 
     # check if any outfits exist
     def check_outfits(self):
-        u = self.get_user_id()
-        username = u[0]
-        select_query = "select item_id from clothingItems where user_id = ?"
-        self.c.execute(select_query, (username,))
+        user_id = self.get_user_id()
+        select_query = "SELECT Outfit_ID from User_Outfits WHERE User_ID = ?"
+        self.c.execute(select_query, (user_id,))
         answer = self.c.fetchall()
         items = len(answer)
         login_details = []
@@ -298,32 +324,23 @@ class HomeScreen(tk.Frame):
             for value in item:
                 login_details.append(value)
         if items == 0:
-            print("no outfits found")
             self.display_empty()
         return items
 
     # loads images of the outfits from the database
     def load_images(self):
-        u = self.get_user_id()  # fetches user id from current user file
-        user = u[0] 
-        fetch_image_query = """SELECT image from clothingItems where user_id = ? LIMIT 5"""  
-        self.c.execute(fetch_image_query, (user,))
+        user_id = self.get_user_id()  # fetches user id from current user file
+        fetch_image_query = """SELECT Outfit_Image from User_Outfits where user_id = ? LIMIT ?"""
+        self.c.execute(fetch_image_query, (user_id, self.outfitsAvailable))
         record = self.c.fetchall()
         for index, row in enumerate(record):
             photoPath = "C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/outfit{}.png".format(index)
             with open(photoPath, 'wb') as file:
                 file.write(row[0])  # Access the first element of the tuple (the image data)
 
-    # checks how many outfits are available by counting number of image files
-    def check_num_outfits(self):
-        image_path = "C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/"
-        files = [f for f in os.listdir(directory_path) if os.path.isfile(os.path.join(image_path, f))]
-        counter = len(files)
-        return counter
-
     # calls function to crop image for every item in the directory
     def organise_images(self):
-        num = self.check_num_outfits()
+        num = self.outfitsAvailable
         for i in range(num):
             image = Image.open("C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/outfit" + str(i) + ".png")
             newimage = self.crop_image(image)
@@ -371,12 +388,3 @@ class HomeScreen(tk.Frame):
         image_data = response.content
         image = Image.open(BytesIO(image_data))  # opens the image to be used
         return ImageTk.PhotoImage(image)
-
-
-win = tk.Tk()
-win.title("OutfitGenie")
-win.geometry("600x800+1000+300")
-win.configure(background="#f9fdf7")
-HomeScreen(win).pack(expand=True)
-
-win.mainloop()
