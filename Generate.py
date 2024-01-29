@@ -3,6 +3,8 @@ from tkinter import ttk
 import sqlite3
 from PIL import Image, ImageTk, ImageChops
 import tkinter.font as tkFont
+import requests
+import datetime
 
 
 class GenerateMenu(tk.Frame):
@@ -179,9 +181,110 @@ class GenerateMenu(tk.Frame):
 
     def create_outfits(self):
         occasion = self.occasion.get()
-        print(occasion)
         if occasion == "Select Occasion":
             self.ErrorFrame.place(x=0, y=770, relwidth=1)
+        else:
+            occasion = self.occasion.get()
+            self.ErrorFrame.place_forget()
+            possible_items = self.retrieve_occasion_and_user_items(
+                occasion)  # fetches ID of all user items that are appropriate for the occasion
+            self.filter_by_weather()
+            self.filter_by_season()
+
+    def filter_by_weather(self):
+        precipitation = False
+        precipitation_keywords = ["precipitation", "rain", "snow", "drizzle", "showers"]
+        condition, high, low, feel = self.get_weather()
+        for item in precipitation_keywords:
+            if item in condition:
+                precipitation = True
+                break
+            else:
+                precipitation = False
+        return precipitation
+
+    def filter_by_season(self):
+        month = datetime.date.today().strftime("%m")
+        if month in ["12", "01", "02"]:
+            season = "Winter"
+        elif month in ["03", "04", "05"]:
+            season = "Spring"
+        elif month in ["06", "07", "08"]:
+            season = "Summer"
+        else:
+            season = "Autumn"
+        return season
+
+    # fetches the variables necessary to display the weather forecast for the user's area
+    def get_weather(self):
+        api_key = "45303768bf0f4c00898183710231211"
+        latitude = self.get_latitude()
+        longitude = self.get_longitude()
+        weather_url = "http://api.weatherapi.com/v1/forecast.json?q=" + str(latitude) + "%20" + str(
+            longitude) + "&days=1&key=" + api_key  # url to be used to fetch the weather data
+        fetch = requests.get(weather_url)
+        response = fetch.json()  # fetches the json response
+        day_description = response["forecast"]["forecastday"][0]["day"]["condition"]["text"]
+        high_temp = response["forecast"]["forecastday"][0]["day"]["maxtemp_c"]
+        low_temp = response["forecast"]["forecastday"][0]["day"]["mintemp_c"]
+        feels_like = response["current"]["feelslike_c"]
+
+        return day_description, high_temp, low_temp, feels_like
+
+    # function to get latitude of user's location
+    def get_latitude(self):
+        user_id = self.get_user_id()
+        lat_query = """SELECT Latitude from Users WHERE User_ID = ?"""
+        self.c.execute(lat_query, (user_id,))
+        result = self.c.fetchall()
+        latitude = result[0][0]
+        return latitude
+
+    # function to get longitude of user's location
+    def get_longitude(self):
+        user_id = self.get_user_id()
+        lng_query = """SELECT Longitude from Users WHERE User_ID = ?"""
+        self.c.execute(lng_query, (user_id,))
+        result = self.c.fetchall()
+        longitude = result[0][0]
+        return longitude
+
+    # get id of user to load any saved outfits
+    def get_user_id(self):
+        with open("current_user.txt") as f:
+            user_id = f.readline()
+        return user_id
+
+    def retrieve_occasion_id(self, occasion):
+        occasion_id_query = """SELECT Occasion_ID FROM Occasions WHERE Occasion_Name = ?"""
+        self.c.execute(occasion_id_query, (occasion,))
+        response = self.c.fetchall()
+        occasion_id = response[0][0]
+        return occasion_id
+
+    def retrieve_user_items(self):
+        user_id = self.get_user_id()
+        occasion_item_query = """SELECT Item_ID FROM Clothing_Items WHERE User_ID = ?"""
+        self.c.execute(occasion_item_query, (user_id,))
+        response = self.c.fetchall()
+        all_items = []
+        for item in response:
+            for value in item:
+                all_items.append(value)
+        return all_items
+
+    def retrieve_occasion_and_user_items(self, occasion):
+        occasion_id = self.retrieve_occasion_id(occasion)
+        all_items = self.retrieve_user_items()
+        available_items = []
+        for item in all_items:
+            occasion_and_user_query = """SELECT Item_ID FROM Items_Occasions WHERE Item_ID = ? AND Occasion_ID = ?"""
+            self.c.execute(occasion_and_user_query, (item, occasion_id))
+            response = self.c.fetchall()
+            if response:
+                available_items.append(response[0][0])
+        return available_items
+
 
 
 

@@ -5,6 +5,7 @@ import homescreen
 import Generate
 import Settings
 import tkinter as tk
+import sqlite3
 
 # main function for creating an instance of the main window and calling other windows to fill it
 def main():
@@ -101,6 +102,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
