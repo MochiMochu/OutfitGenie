@@ -5,6 +5,7 @@ from PIL import Image, ImageTk, ImageChops
 import tkinter.font as tkFont
 import requests
 import datetime
+import io
 
 
 class GenerateMenu(tk.Frame):
@@ -180,6 +181,7 @@ class GenerateMenu(tk.Frame):
         return occasions
 
     def create_outfits(self):
+        ids = ["BBC0001", "GBT0001"]
         occasion = self.occasion.get()
         if occasion == "Select Occasion":
             self.ErrorFrame.place(x=0, y=770, relwidth=1)
@@ -284,6 +286,49 @@ class GenerateMenu(tk.Frame):
             if response:
                 available_items.append(response[0][0])
         return available_items
+
+    # returns the images of the items that were chosen to be in the outfit
+    def retrieve_selected_images(self, item_ids):
+        image_query = """SELECT Clothing_Image FROM Clothing_Items WHERE Item_ID = ?"""
+        num = 0
+        # fetches each of the BLOBs for the item_IDs and saves them to a temporary folder
+        for item in item_ids:
+            num += 1
+            self.c.execute(image_query, (item,))
+            response = self.c.fetchall()
+            blob_img = response[0][0]
+            img = Image.open(io.BytesIO(blob_img))
+            img.save("C:/Users/jasmi/PycharmProjects/OutfitGenie/temp-item-images/item" + str(num) + ".png")
+
+    # item IDs have to be passed in the order: top, bottoms, outerwear
+    def compile_images(self, item_ids):
+        item_x_coords =[35, 35, 250]  # x coordinates for where the top left corner of the image will be (different for each item)
+        item_y_coords = [5, 280, 40]  # the same but for the y coordinates
+        num_items = len(item_ids)
+        background = Image.open("white_bg.png")  # standard white background to place the item images on
+        resized_bg = background.resize((500, 650))  # resizes the background to display
+
+        # loops through the items and places them on the white background according to the coordinates above
+        for i in range(num_items):
+            overlay_image = self.resize_image("item"+str(i)+".png")
+            resized_bg.paste(overlay_image, (item_x_coords[i], item_y_coords[i]), overlay_image)
+            resized_bg.save("C:/Users/jasmi/PycharmProjects/OutfitGenie/temp-outfit-images/newoutfit")
+
+    # resizes the image to fit the background according to its original aspect ratio
+    def resize_image(self, image_path):
+        overlay_image = Image.open(image_path)
+        original_width = overlay_image.size[0]
+        scale = (250 / float(original_width))
+        height = int((float(overlay_image.size[1]) * float(scale)))
+        resized_overlay = overlay_image.resize((250, height))
+
+        return resized_overlay
+
+
+# notes for working on this tomorrow: need to clear the temp-outfit and temp-item folder before generating new item
+# also save the outfit to the database and to the outfit-images folder so it displays on the homescreen
+
+
 
 
 
