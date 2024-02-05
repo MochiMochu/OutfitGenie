@@ -8,16 +8,19 @@ import requests
 import json
 from datetime import datetime
 from io import BytesIO
+import MenuHeader as header
+import CentreWindow as cw
 
 
 class HomeScreen(tk.Frame):
-    def __init__(self, parent, open_generate, open_settings, open_wardrobe, close_app, *args, **kwargs):
+    def __init__(self, parent, open_home, open_generate, open_wardrobe, open_settings, close_app, *args, **kwargs):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         super().__init__()
         self.parent = parent
         self.window = None
 
         # variables for opening new windows
+        self.close_and_open_home = open_home
         self.close_and_open_generate = open_generate
         self.close_and_open_settings = open_settings
         self.close_and_open_wardrobe = open_wardrobe
@@ -28,22 +31,10 @@ class HomeScreen(tk.Frame):
         self.c = conn.cursor()
 
         # initiating instance variables to be modified later
-        self.logo = None
-        self.logo_image = None
-        self.newOutfit = None
-        self.navigation = None
         self.outfitHeadingCont = None
         self.carouselCont = None
         self.carouselCanvas = None
         self.buttonsCont = None
-        self.homeBtn = None
-        self.homeBtnImg = None
-        self.generateBtn = None
-        self.generateBtnImg = None
-        self.wardrobeBtn = None
-        self.wardrobeBtnImg = None
-        self.settingsBtn = None
-        self.settingsBtnImg = None
         self.outfitHeading = None
         self.scrollbar = None
         self.generateOutfitsBtnBorder = None
@@ -70,14 +61,17 @@ class HomeScreen(tk.Frame):
         self.maxTemp = None
         self.minTemp = None
         self.realFeel = None
+        self.newOutfit = tk.PhotoImage(file="app-images/NewOutfit.png")
 
-    # starts this window so that it is placed on the topmost level of all the other windows
+        # starts this window so that it is placed on the topmost level of all the other windows
     def start(self):
         self.window = tk.Toplevel(self.parent)
+        cw.centrewin(self.window, 600, 800)
+        self.window.withdraw()
         self.window.protocol ("WM_DELETE_WINDOW", self.close_app)
         self.window.title("OutfitGenie")
         self.window.configure(bg="#f9fdf7")
-        self.window.geometry("600x800+1000+300")
+        self.window.deiconify()
         self.create_widgets()
 
     # fetches the variables necessary to display the weather forecast for the user's area
@@ -89,44 +83,11 @@ class HomeScreen(tk.Frame):
             self.longitude[0]) + "&days=1&key=" + self.api_key  # url to be used to fetch the weather data
 
     def create_widgets(self):
-        # initiate images
-        self.logo = tk.Canvas(self.window, width=160, height=90, background='#f9fdf7', highlightbackground="#f9fdf7")
-        self.logo_image = self.get_logo()  # gets image of the logo
-        self.logo.create_image(82, 45, image=self.logo_image)  # create an image of the logo in the canvas 
-        self.newOutfit = tk.PhotoImage(file="NewOutfit.png")  # loads in the image of the icon that prompts the user to create a new outfit
-
         # initiate frames for navigation buttons and carousel
-        self.navigation = tk.Frame(self.window, width=600, height=150, background="#f9fdf7")
         self.outfitHeadingCont = tk.Frame(self.window, width=600, height=150, background="#f9fdf7")
         self.carouselCont = tk.Frame(self.window, height=250)
         self.carouselCanvas = tk.Canvas(self.carouselCont, height=260, background='#f9fdf7', highlightthickness=0)
         self.buttonsCont = ttk.Frame(self.carouselCanvas)
-
-        # initiate navigation buttons
-        self.homeBtn = tk.Button(self.navigation, background="#f9fdf7", borderwidth=0)
-        self.homeBtnImg = tk.PhotoImage(file="HomeBtnImg.png")
-        self.homeBtn.config(image=self.homeBtnImg)
-
-        self.generateBtn = tk.Button(self.navigation,
-                                     background="#f9fdf7",
-                                     borderwidth=0,
-                                     command=self.close_and_open_generate)
-        self.generateBtnImg = tk.PhotoImage(file="GenerateBtnImg.png")
-        self.generateBtn.config(image=self.generateBtnImg)
-
-        self.wardrobeBtn = tk.Button(self.navigation,
-                                     background="#f9fdf7",
-                                     borderwidth=0,
-                                     command=self.close_and_open_wardrobe)
-        self.wardrobeBtnImg = tk.PhotoImage(file="WardrobeBtnImg.png")
-        self.wardrobeBtn.config(image=self.wardrobeBtnImg)
-
-        self.settingsBtn = tk.Button(self.navigation,
-                                     background="#f9fdf7",
-                                     borderwidth=0,
-                                     command=self.close_and_open_settings)
-        self.settingsBtnImg = tk.PhotoImage(file="SettingsBtnImg.png")
-        self.settingsBtn.config(image=self.settingsBtnImg)
 
         # initiate widgets for outfit displays
         self.outfitHeading = ttk.Label(self.outfitHeadingCont,
@@ -228,15 +189,10 @@ class HomeScreen(tk.Frame):
                                  foreground="#5a6275",
                                  background="#e0f7ff")
 
-        # pack logo and navigation buttons into frames and pack frames onto the app
-        self.logo.pack(side=tk.TOP, anchor=tk.NW, pady=3, padx=10)
-        self.homeBtn.pack(side=tk.LEFT, anchor=tk.W)
-        self.generateBtn.pack(side=tk.LEFT, anchor=tk.W)
-        self.wardrobeBtn.pack(side=tk.LEFT, anchor=tk.W, padx=(15, 0))
-        self.settingsBtn.pack(side=tk.LEFT, anchor=tk.W, padx=(10, 0))
-        self.navigation.pack(pady=(10, 0))
-
         # pack widgets for displaying outfits
+        self.header = header.MenuHeader(self.parent, self.window, "Home", "#f9fdf7", self.close_and_open_home,
+                                        self.close_and_open_generate, self.close_and_open_wardrobe,
+                                        self.close_and_open_settings)
         self.outfitHeading.pack(side=tk.LEFT, anchor=tk.NW)
         self.outfitHeadingCont.pack(pady=(15, 0), padx=(10, 380))
         self.carouselCont.pack(fill="x", padx=30, pady=(10, 0))
@@ -276,15 +232,9 @@ class HomeScreen(tk.Frame):
             elif os.path.isdir(item_path):
                 shutil.rmtree(item_path)  # Remove subdirectories and their contents
 
-    # opens and resizes the transparent image for the app logo
-    def get_logo(self):
-        img = (Image.open("AppLogo.png"))
-        resized_image = ImageTk.PhotoImage(img.resize((160, 90)))
-        return resized_image
-
     # get id of user to load any saved outfits
     def get_user_id(self):
-        with open("current_user.txt") as f:
+        with open("app-text-files/current_user.txt") as f:
             user_id = f.readline()
         return user_id
 

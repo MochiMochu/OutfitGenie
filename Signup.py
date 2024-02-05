@@ -4,7 +4,7 @@ import sqlite3
 import re
 from opencage.geocoder import OpenCageGeocode  # imports the module for the weather API
 import bcrypt
-
+import CentreWindow as cw
 
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
 class SignUpEntry(ttk.Entry):
@@ -69,10 +69,10 @@ class SignUpScreen(tk.Frame):
     # starts this window so that it is placed on the topmost level of all the other windows
     def start(self):
         self.window = tk.Toplevel(self.parent)
+        cw.centrewin(self.window, 600, 800)
         self.window.title("OutfitGenie")
         self.window.protocol("WM_DELETE_WINDOW", self.close_app)
         self.window.configure(bg="#ddedea")
-        self.window.geometry("600x800+1000+300")
         self.create_widgets()
 
     def create_widgets(self):
@@ -387,7 +387,7 @@ class SignUpScreen(tk.Frame):
 
     # saves the current user's username to the text file to be able to access their information later
     def save_username(self, u):
-        with open("current_user.txt", "w") as f:
+        with open("app-text-files/current_user.txt", "w") as f:
             f.write(u)
 
     # displays success of account creation

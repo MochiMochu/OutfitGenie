@@ -5,12 +5,12 @@ import homescreen
 import Generate
 import Settings
 import tkinter as tk
-import sqlite3
+
 
 # main function for creating an instance of the main window and calling other windows to fill it
 def main():
     root = tk.Tk()
-    root.withdraw() # removes the root window from view (as other windows are created on top of it)
+    root.withdraw()  # removes the root window from view (as other windows are created on top of it)
     # initiate variables to hold the instances of the different windows
     login_window = None
     signup_window = None
@@ -90,10 +90,10 @@ def main():
     # creates instances of each window type and passes in the methods to switch between windows
     login_window = Login.LoginScreen(root, user_logged_in, open_signup, open_home, close_app)
     signup_window = Signup.SignUpScreen(root, user_logged_in, open_home, close_app)
-    home_window = homescreen.HomeScreen(root, open_generate, open_settings, open_wardrobe, close_app)
-    generate_window = Generate.GenerateMenu(root, open_home, open_settings, open_wardrobe, close_app)
-    settings_window = Settings.SettingsMenu(root, open_home, close_app)
-    wardrobe_window = Wardrobe.WardrobeMenu(root, open_home, close_app)
+    home_window = homescreen.HomeScreen(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
+    generate_window = Generate.GenerateMenu(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
+    settings_window = Settings.SettingsMenu(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
+    wardrobe_window = Wardrobe.WardrobeMenu(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
 
     login_window.start()
 

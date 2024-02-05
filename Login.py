@@ -5,6 +5,7 @@ from PIL import ImageTk, Image
 import sqlite3
 import time
 import bcrypt
+import CentreWindow as cw
 
 
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
@@ -51,10 +52,12 @@ class LoginScreen(tk.Frame):
     # starts this window so that it is placed on the topmost level of all the other windows
     def start(self):
         self.window = tk.Toplevel(self.parent)
+        self.window.withdraw()
+        cw.centrewin(self.window, 600, 800)
         self.window.protocol("WM_DELETE_WINDOW", self.close_app)
         self.window.title("OutfitGenie")
         self.window.configure(bg="#cdf3ff")
-        self.window.geometry("600x800+1000+300")
+        self.window.deiconify()
         self.create_widgets()
 
     def create_widgets(self):
@@ -153,7 +156,7 @@ class LoginScreen(tk.Frame):
 
     # opens and resizes the transparent image for the app logo
     def get_logo(self):
-        img = (Image.open("AppLogo.png"))
+        img = (Image.open("app-images/AppLogo.png"))
         resized_image = ImageTk.PhotoImage(img.resize((300, 160)))
         return resized_image
 
@@ -203,5 +206,5 @@ class LoginScreen(tk.Frame):
 
     # saves the current user's username to the text file to be able to access their information later
     def save_user(self, u):
-        with open("current_user.txt", "w") as f:
+        with open("app-text-files/current_user.txt", "w") as f:
             f.write(u)

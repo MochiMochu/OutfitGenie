@@ -2,14 +2,15 @@ import tkinter as tk
 from tkinter import ttk
 import sqlite3
 from PIL import Image, ImageTk, ImageChops
-import tkinter.font as tkFont
+import MenuHeader as header
 import requests
 import datetime
 import io
+import CentreWindow as cw
 
 
 class GenerateMenu(tk.Frame):
-    def __init__(self, parent, open_home, open_settings, open_wardrobe, close_app, *args, **kwargs):
+    def __init__(self, parent, open_home, open_generate, open_wardrobe, open_settings, close_app, *args, **kwargs):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         super().__init__()
         self.parent = parent
@@ -21,6 +22,7 @@ class GenerateMenu(tk.Frame):
         self.close_and_open_home = open_home
         self.close_and_open_settings = open_settings
         self.close_and_open_wardrobe = open_wardrobe
+        self.close_and_open_generate = open_generate
         self.close_app = close_app
 
         # initiating the database calls
@@ -28,19 +30,6 @@ class GenerateMenu(tk.Frame):
         self.c = conn.cursor()
 
         # initiating instance variables to be modified later
-        self.logo = None
-        self.logo_image = None
-        self.newOutfit = None
-        self.navigation = None
-        self.homeBtn = None
-        self.homeBtnImg = None
-        self.generateBtn = None
-        self.generateBtnImg = None
-        self.wardrobeBtn = None
-        self.wardrobeBtnImg = None
-        self.settingsBtn = None
-        self.settingsBtnImg = None
-        self.buttonImg = None
         self.button = None
         self.occasionStyle = None
         self.occasionList = None
@@ -51,60 +40,19 @@ class GenerateMenu(tk.Frame):
     # starts this window so that it is placed on the topmost level of all the other windows
     def start(self):
         self.window = tk.Toplevel(self.parent)
+        cw.centrewin(self.window, 600, 800)
         self.window.protocol("WM_DELETE_WINDOW", self.close_app)
         self.window.title("OutfitGenie")
         self.window.configure(bg="#dcf5df")
-        self.window.geometry("600x800+1000+300")
-        self.create_widgets()
+        self.create_generate_widgets()
+        self.header = header.MenuHeader(self.parent, self.window, "Generate", "#dcf5df", self.close_and_open_home,
+                                        self.close_and_open_generate, self.close_and_open_wardrobe,
+                                        self.close_and_open_settings)
+        self.header.pack()
 
-    def create_widgets(self):
-        # initiate images
-        self.logo = tk.Canvas(self.window, width=160, height=90, background='#dcf5df', highlightbackground="#dcf5df")
-        self.logo_image = self.get_logo()
-        self.logo.create_image(82, 45, image=self.logo_image)
-        self.newOutfit = tk.PhotoImage(file="NewOutfit.png")
-
-        # initiate frame for navigation buttons
-        self.navigation = tk.Frame(self.window, width=600, height=150, background="#dcf5df")
-
-        # initiate navigation buttons
-        self.homeBtn = tk.Button(self.navigation,
-                                 background="#dcf5df",
-                                 borderwidth=0,
-                                 command=self.close_and_open_home)
-        self.homeBtnImg = tk.PhotoImage(file="HomeBtnImg.png")
-        self.homeBtn.config(image=self.homeBtnImg)
-
-        self.generateBtn = tk.Button(self.navigation,
-                                     background="#dcf5df",
-                                     borderwidth=0)
-        self.generateBtnImg = tk.PhotoImage(file="GenerateBtnImg.png")
-        self.generateBtn.config(image=self.generateBtnImg)
-
-        self.wardrobeBtn = tk.Button(self.navigation,
-                                     background="#dcf5df",
-                                     borderwidth=0,
-                                     command=self.close_and_open_wardrobe)
-        self.wardrobeBtnImg = tk.PhotoImage(file="WardrobeBtnImg.png")
-        self.wardrobeBtn.config(image=self.wardrobeBtnImg)
-
-        self.settingsBtn = tk.Button(self.navigation,
-                                     background="#dcf5df",
-                                     borderwidth=0,
-                                     command=self.close_and_open_settings)
-        self.settingsBtnImg = tk.PhotoImage(file="SettingsBtnImg.png")
-        self.settingsBtn.config(image=self.settingsBtnImg)
-
-        # pack logo and navigation buttons into frames and pack frames onto the app
-        self.logo.pack(side=tk.TOP, anchor=tk.NW, pady=3, padx=10)
-        self.homeBtn.pack(side=tk.LEFT, anchor=tk.W)
-        self.generateBtn.pack(side=tk.LEFT, anchor=tk.W)
-        self.wardrobeBtn.pack(side=tk.LEFT, anchor=tk.W, padx=(15, 0))
-        self.settingsBtn.pack(side=tk.LEFT, anchor=tk.W, padx=(10, 0))
-        self.navigation.pack(pady=(10, 0))
-
+    def create_generate_widgets(self):
         # button for generating a new outfit
-        self.buttonImg = tk.PhotoImage(file="button.png")
+        self.buttonImg = tk.PhotoImage(file="app-images/button.png")
         self.button = tk.Button(self.window,
                                 background="#dcf5df",
                                 borderwidth=0,
@@ -127,19 +75,13 @@ class GenerateMenu(tk.Frame):
 
         # error message if an occasion hasn't been chosen and the generate button is clicked
         self.ErrorFrameStyle.configure("Error.TFrame",
-                                  background="#9c9c9c",
-                                  highlightbackground="#9c9c9c",
-                                  hightlightcolor="#9c9c9c")
+                                    background="#9c9c9c",
+                                    highlightbackground="#9c9c9c",
+                                    hightlightcolor="#9c9c9c")
         self.ErrorStyle.configure("Error.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
         self.ErrorFrame = ttk.Frame(self.window, style = "Error.TFrame")
         self.occasionError = ttk.Label(self.ErrorFrame, text="Please select an occasion", style="Error.TLabel" )
         self.occasionError.pack()
-
-    # opens and resizes the transparent image for the app logo
-    def get_logo(self):
-        img = (Image.open("AppLogo.png"))
-        resized_image = ImageTk.PhotoImage(img.resize((160, 90)))
-        return resized_image
 
     # function to get list of occasions
     def get_occasions(self):
@@ -253,7 +195,7 @@ class GenerateMenu(tk.Frame):
 
     # get id of user to load any saved outfits
     def get_user_id(self):
-        with open("current_user.txt") as f:
+        with open("app-text-files/current_user.txt") as f:
             user_id = f.readline()
         return user_id
 
@@ -305,7 +247,7 @@ class GenerateMenu(tk.Frame):
         item_x_coords =[35, 35, 250]  # x coordinates for where the top left corner of the image will be (different for each item)
         item_y_coords = [5, 280, 40]  # the same but for the y coordinates
         num_items = len(item_ids)
-        background = Image.open("white_bg.png")  # standard white background to place the item images on
+        background = Image.open("app-images/white_bg.png")  # standard white background to place the item images on
         resized_bg = background.resize((500, 650))  # resizes the background to display
 
         # loops through the items and places them on the white background according to the coordinates above

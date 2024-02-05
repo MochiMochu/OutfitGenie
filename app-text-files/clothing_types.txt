@@ -1,0 +1,44 @@
+t-shirt
+graphic tee
+polo shirt
+corset
+off the shoulder top
+bodysuit
+camisole
+crop top
+tube top
+tank top
+formal shirt
+blouse
+turtleneck
+jumper
+cardigan
+sweatshirt
+hoodie
+joggers
+miniskirt
+jeans
+cargo pants
+flares
+leggings
+slacks
+hot pants
+bermuda shorts
+shorts
+mini skirt
+midi skirt
+maxi skirt
+mini dress
+midi dress
+maxi dress
+bodycon dress
+dungarees
+jumpsuit
+overalls
+blazer
+gilet
+fur coat
+puffer coat
+jacket
+parka
+trench coat
