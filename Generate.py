@@ -95,43 +95,17 @@ class GenerateMenu(tk.Frame):
 
     # sorting occasions in alphabetical order using merge sort
     def sort_occasions(self, occasions):
-        if len(occasions) > 1:
-            midpoint = len(occasions) // 2
-            leftHalf = occasions[midpoint:]
-            rightHalf = occasions[:midpoint]
-            self.sort_occasions(leftHalf)
-            self.sort_occasions(rightHalf)
-            i = 0
-            j = 0
-            k = 0
-            while i < len(leftHalf) and j < len(rightHalf):
-                if leftHalf[i] < rightHalf[j]:
-                    occasions[k] = leftHalf[i]
-                    i += 1
-                else:
-                    occasions[k] = rightHalf[j]
-                    j += 1
-                k = k + 1
-            while i < len(leftHalf):
-                occasions[k] = leftHalf[i]
-                i = i + 1
-                k += 1
-            while j < len(rightHalf):
-                occasions[k] = rightHalf[j]
-                j += 1
-                k += 1
+        occasion = sorted(occasions)
         return occasions
 
     def create_outfits(self):
-        ids = ["BBC0001", "GBT0001"]
         occasion = self.occasion.get()
         if occasion == "Select Occasion":
             self.ErrorFrame.place(x=0, y=770, relwidth=1)
         else:
             occasion = self.occasion.get()
             self.ErrorFrame.place_forget()
-            possible_items = self.retrieve_occasion_and_user_items(
-                occasion)  # fetches ID of all user items that are appropriate for the occasion
+            possible_items = self.retrieve_occasion_and_user_items(occasion)  # fetches ID of all user items that are appropriate for the occasion
             self.filter_by_weather()
             self.filter_by_season()
 

@@ -16,12 +16,12 @@ cardigan
 sweatshirt
 hoodie
 joggers
-miniskirt
 jeans
 cargo pants
 flares
 leggings
 slacks
+suit pants
 hot pants
 bermuda shorts
 shorts
@@ -42,3 +42,5 @@ puffer coat
 jacket
 parka
 trench coat
+
+

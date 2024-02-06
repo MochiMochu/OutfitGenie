@@ -20,12 +20,9 @@ gold
 silver
 olive
 navy
-maroon
 teal
-aqua
 cyan
 khaki
 denim
 salmon
-ivory
 taupe
