@@ -97,9 +97,6 @@ class LoginScreen(tk.Frame):
 
         # labels for error messages
         self.usernameNotFound = ttk.Label(self.btnCont, text="Username not found, sign up process starting...", foreground="red")
-        self.usernameTaken = ttk.Label(self.btnCont,
-                                       text="Error, this username has already been taken.",
-                                       foreground="red")
         self.passwordNoMatch = ttk.Label(self.btnCont, text="Error, password does not match username.", foreground="red")
         # labels for error messages
 
