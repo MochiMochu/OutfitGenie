@@ -17,6 +17,51 @@ class GenerateMenu(tk.Frame):
         self.window = None
         self.ErrorStyle = ttk.Style()
         self.ErrorFrameStyle = ttk.Style()
+        self.clothing_categories = {"t-shirt": "top",
+                                    "graphic tee": "top",
+                                    "polo shirt": "top",
+                                    "corset": "top",
+                                    "off the shoulder top": "top",
+                                    "bodysuit": "top",
+                                    "camisole": "top",
+                                    "crop top": "top",
+                                    "tube top": "top",
+                                    "tank top": "top",
+                                    "formal shirt": "top",
+                                    "blouse": "top",
+                                    "turtleneck": "top",
+                                    "jumper": "top",
+                                    "cardigan": "outerwear",
+                                    "sweatshirt": "outerwear",
+                                    "hoodie": "outerwear",
+                                    "joggers": "bottom",
+                                    "jeans": "bottom",
+                                    "cargo pants": "bottom",
+                                    "flares": "bottom",
+                                    "leggings": "bottom",
+                                    "slacks": "bottom",
+                                    "suit pants": "bottom",
+                                    "hot pants": "bottom",
+                                    "bermuda shorts": "bottom",
+                                    "shorts": "bottom",
+                                    "mini skirt": "bottom",
+                                    "midi skirt": "bottom",
+                                    "maxi skirt": "bottom",
+                                    "mini dress": "onepiece",
+                                    "midi dress": "onepiece",
+                                    "maxi dress": "onepiece",
+                                    "bodycon dress": "onepiece",
+                                    "dungarees": "onepiece",
+                                    "jumpsuit": "onepiece",
+                                    "overalls": "onepiece",
+                                    "blazer": "outerwear",
+                                    "gilet": "outerwear",
+                                    "fur coat": "outerwear",
+                                    "puffer coat": "outerwear",
+                                    "jacket": "outerwear",
+                                    "parka": "outerwear",
+                                    "trench coat": "outerwear"
+                                }
 
         # variables for opening new windows
         self.close_and_open_home = open_home
@@ -83,6 +128,11 @@ class GenerateMenu(tk.Frame):
         self.occasionError = ttk.Label(self.ErrorFrame, text="Please select an occasion", style="Error.TLabel" )
         self.occasionError.pack()
 
+        # error message if there aren't enough clothing items to be able to generate an outfit
+        self.ErrorInsufficientFrame = ttk.Frame(self.window, style = "Error.TFrame")
+        self.insufficientError = ttk.Label(self.ErrorInsufficientFrame, text="Insufficient items uploaded", style="Error.TLabel")
+        self.insufficientError.pack()
+
     # function to get list of occasions
     def get_occasions(self):
         self.c.execute("""SELECT Occasion_Name FROM Occasions""")
@@ -93,46 +143,6 @@ class GenerateMenu(tk.Frame):
                 occasions.append(value)
         return occasions
 
-    # sorting occasions in alphabetical order using merge sort
-    def sort_occasions(self, occasions):
-        occasion = sorted(occasions)
-        return occasions
-
-    def create_outfits(self):
-        occasion = self.occasion.get()
-        if occasion == "Select Occasion":
-            self.ErrorFrame.place(x=0, y=770, relwidth=1)
-        else:
-            occasion = self.occasion.get()
-            self.ErrorFrame.place_forget()
-            possible_items = self.retrieve_occasion_and_user_items(occasion)  # fetches ID of all user items that are appropriate for the occasion
-            self.filter_by_weather()
-            self.filter_by_season()
-
-    def filter_by_weather(self):
-        precipitation = False
-        precipitation_keywords = ["precipitation", "rain", "snow", "drizzle", "showers"]
-        condition, high, low, feel = self.get_weather()
-        for item in precipitation_keywords:
-            if item in condition:
-                precipitation = True
-                break
-            else:
-                precipitation = False
-        return precipitation
-
-    def filter_by_season(self):
-        month = datetime.date.today().strftime("%m")
-        if month in ["12", "01", "02"]:
-            season = "Winter"
-        elif month in ["03", "04", "05"]:
-            season = "Spring"
-        elif month in ["06", "07", "08"]:
-            season = "Summer"
-        else:
-            season = "Autumn"
-        return season
-
     # fetches the variables necessary to display the weather forecast for the user's area
     def get_weather(self):
         api_key = "45303768bf0f4c00898183710231211"
@@ -142,12 +152,161 @@ class GenerateMenu(tk.Frame):
             longitude) + "&days=1&key=" + api_key  # url to be used to fetch the weather data
         fetch = requests.get(weather_url)
         response = fetch.json()  # fetches the json response
-        day_description = response["forecast"]["forecastday"][0]["day"]["condition"]["text"]
-        high_temp = response["forecast"]["forecastday"][0]["day"]["maxtemp_c"]
-        low_temp = response["forecast"]["forecastday"][0]["day"]["mintemp_c"]
         feels_like = response["current"]["feelslike_c"]
 
-        return day_description, high_temp, low_temp, feels_like
+        return feels_like
+
+    # sorting occasions in alphabetical order using merge sort
+    def sort_occasions(self, occasions):
+        occasion = sorted(occasions)
+        return occasions
+
+    # displays error message that the number of items uploaded is not enough for an outfit to be generated
+    def error_not_sufficient(self):
+        self.ErrorInsufficientFrame.place(x=0, y=770, relwidth=1)
+
+    def create_outfits(self):
+        occasion = self.occasion.get()
+        if occasion == "Select Occasion":
+            self.ErrorFrame.place(x=0, y=770, relwidth=1)
+        else:
+            occasion = self.occasion.get()
+            self.ErrorFrame.place_forget()
+            feels_like = int(self.get_weather())
+            possible_items = self.retrieve_occasion_and_user_items(occasion)  # fetches ID of all user items that are appropriate for the occasion
+            if not possible_items:
+                self.error_not_sufficient()
+            else:
+                tops, bottoms, onepieces, outerwear = self.sort_items(possible_items)  # sorts IDs into categories of clothing
+                check_sufficient = self.check_enough_items(tops, bottoms)
+                if not check_sufficient:
+                    self.error_not_sufficient()
+                else:
+                    thickness, outerwear_needed, bottoms_type = self.requirements_by_temperature(feels_like)
+
+    # sorts the IDs into separate lists for what type of clothing they are (tops, bottoms, outerwear or onepieces)
+    def sort_items(self, possible_items):
+        type_query = """SELECT Clothing_Type FROM Clothing_Items WHERE Item_ID = ?"""
+        for id in possible_items:
+            self.c.execute(type_query, (id,))
+        response = self.c.fetchall()
+        all_types = []
+        for count in response:
+            for type in count:
+                all_types.append(type)
+        # convert the type of clothing into the category (bottom, top, onepiece or outerwear)
+        for i in range (len(all_types)):
+            all_types[i] = self.clothing_categories[all_types[i].lower()]
+
+        # split the item IDs into lists depending on their category
+        tops = []
+        bottoms = []
+        onepieces = []
+        outerwear = []
+        for j in range(len(all_types)):
+            if all_types[j] == "bottom":
+                bottoms.append(possible_items[j])
+            elif all_types[j] == "top":
+                tops.append(possible_items[j])
+            elif all_types[j] == "onepiece":
+                onepieces.append(possible_items[j])
+            else:
+                outerwear.append(possible_items[j])
+        return tops, bottoms, onepieces, outerwear
+
+    # filters down the list of IDs based on the current real feel temperature
+    def requirements_by_temperature(self, feels_like):
+        thickness = ""
+        outerwear_needed = ""
+        bottoms_type = ""
+        if feels_like <= 13:
+            thickness = "thick"
+            outerwear_needed = "coats"
+            bottoms_type = "long"
+        elif 13 < feels_like <= 20:
+            thickness = "medium"
+            outerwear_needed = "either"
+            bottoms_type = "long"
+        elif 20 < feels_like <= 25:
+            thickness = "thin"
+            outerwear_needed = "jumper"
+            bottom_types = "short"
+        else:
+            thickness = "thin"
+            outerwear_needed = "none"
+            bottoms_type = "short"
+        return thickness, outerwear_needed, bottoms_type
+
+    # checks if there are enough items to generate a basic outfit
+    def check_enough_items(self, tops, bottoms):
+        # checks if there are any tops or bottoms matching the occasion
+        if len(tops) == 0 or len(bottoms) == 0:
+            return False
+        else:
+            check_thickness_query = """SELECT Clothing_Thickness FROM Clothing_Items WHERE Item_ID = ?"""
+            # checking if there is at least one item of each thickness in the top and bottoms section for minimum outfit generation
+            top_thickness_check = []
+            for item in tops:
+                self.c.execute(check_thickness_query, (item, ))
+            response = self.c.fetchall()
+            for i in range(len(response[0])):
+                top_thickness_check.append(response[0][i])
+            top_thickness_check = list(dict.fromkeys(top_thickness_check))
+            variants = 0
+            for value in top_thickness_check:
+                if value.lower() == "thick" or value.lower() == "medium" or value.lower() == "thin":
+                    variants += 1
+            if variants != 3:
+                return False
+            else:
+                bottom_thickness_check = []
+                for item in bottoms:
+                    self.c.execute(check_thickness_query, (item,))
+                response = self.c.fetchall()
+                for i in range(len(response[0])):
+                    bottom_thickness_check.append(response[0][i])
+                bottom_thickness_check = list(dict.fromkeys(bottom_thickness_check))
+                variants = 0
+                for value in bottom_thickness_check:
+                    if value.lower() == "thick" or value.lower() == "medium" or value.lower() == "thin":
+                        variants += 1
+                if variants != 3:
+                    return False
+                else:
+                    # checking if there is at least one item of each bottom length for minimum outfit generation
+                    long_bottoms = ["joggers", "jeans", "cargo pants", "flares", "leggings", "slacks", "suit pants",
+                                    "dungarees", "jumpsuit", "overalls"]
+                    short_bottoms = ["hot pants", "shorts", "bermuda shorts", "mini skirt", "midi skirt", "bodycon dress",
+                                     "mini dress"]
+                    num_long = 0
+                    num_short = 0
+                    check_bottom_length_query = """SELECT Clothing_Type FROM Clothing_Items where Item_ID = ?"""
+                    for item in bottoms:
+                        self.c.execute(check_bottom_length_query, (item, ))
+                    response = self.c.fetchall()
+                    for record in response:
+                        for entry in record:
+                            if entry.lower() in long_bottoms:
+                                num_long += 1
+                            else:
+                                num_short += 1
+                    if num_short < 1 or num_long < 1:
+                        return False
+                    else:
+                        return True
+
+    def filter_by_colour(self, possible_items):
+        colour_query = """SELECT Primary_Colour FROM Clothing_Items WHERE Item_ID = ?"""
+        for item in possible_items:
+            self.c.execute(colour_query, (item,))
+        response = self.c.fetchall()
+        duplicate_colours = []
+        for count in response:
+            for item in count:
+                duplicate_colours.append(item)
+
+        # removing duplicates in the list
+        all_colours = list(dict.fromkeys(duplicate_colours))
 
     # function to get latitude of user's location
     def get_latitude(self):
@@ -173,6 +332,7 @@ class GenerateMenu(tk.Frame):
             user_id = f.readline()
         return user_id
 
+    # get the occasion
     def retrieve_occasion_id(self, occasion):
         occasion_id_query = """SELECT Occasion_ID FROM Occasions WHERE Occasion_Name = ?"""
         self.c.execute(occasion_id_query, (occasion,))

@@ -97,9 +97,6 @@ class LoginScreen(tk.Frame):
 
         # labels for error messages
         self.usernameNotFound = ttk.Label(self.btnCont, text="Username not found, sign up process starting...", foreground="red")
-        self.usernameTaken = ttk.Label(self.btnCont,
-                                       text="Error, this username has already been taken.",
-                                       foreground="red")
         self.passwordNoMatch = ttk.Label(self.btnCont, text="Error, password does not match username.", foreground="red")
         # labels for error messages
 
@@ -204,7 +201,7 @@ class LoginScreen(tk.Frame):
     def login_success(self):
         self.successLogin.place(x=0, y=0, relwidth=1)
 
-    # saves the current user's username to the text file to be able to access their information later
+    # saves the current user's user_id to the text file to be able to access their information later
     def save_user(self, u):
         with open("app-text-files/current_user.txt", "w") as f:
             f.write(u)
