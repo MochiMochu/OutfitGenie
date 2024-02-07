@@ -71,8 +71,8 @@ class HomeScreen(tk.Frame):
         self.window.protocol ("WM_DELETE_WINDOW", self.close_app)
         self.window.title("OutfitGenie")
         self.window.configure(bg="#f9fdf7")
-        self.window.deiconify()
         self.create_widgets()
+        self.window.deiconify()
 
     # fetches the variables necessary to display the weather forecast for the user's area
     def get_weather_variables(self):
