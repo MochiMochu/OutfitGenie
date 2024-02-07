@@ -100,7 +100,7 @@ class LoginScreen(tk.Frame):
         self.passwordNoMatch = ttk.Label(self.btnCont, text="Error, password does not match username.", foreground="red")
         # labels for error messages
 
-        # account successful creation message widget
+        # account successful login message widget
         self.FrameStyle.configure("Success.TFrame", background="#9c9c9c", highlightbackground="#9c9c9c",
                                   hightlightcolor="#9c9c9c")  # configure frame bg for success message
         self.successLogin = ttk.Frame(self.window, style="Success.TFrame")
