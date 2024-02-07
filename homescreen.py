@@ -18,6 +18,7 @@ class HomeScreen(tk.Frame):
         super().__init__()
         self.parent = parent
         self.window = None
+        self.newOutfit = tk.PhotoImage(file="app-images/NewOutfit.png")
 
         # variables for opening new windows
         self.close_and_open_home = open_home
@@ -61,7 +62,6 @@ class HomeScreen(tk.Frame):
         self.maxTemp = None
         self.minTemp = None
         self.realFeel = None
-        self.newOutfit = tk.PhotoImage(file="app-images/NewOutfit.png")
 
         # starts this window so that it is placed on the topmost level of all the other windows
     def start(self):
