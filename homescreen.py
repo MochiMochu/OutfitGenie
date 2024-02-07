@@ -83,7 +83,7 @@ class HomeScreen(tk.Frame):
             self.longitude[0]) + "&days=1&key=" + self.api_key  # url to be used to fetch the weather data
 
     def create_widgets(self):
-        # initiate frames for navigation buttons and carousel
+        # initiate frames for carousel and its buttons
         self.outfitHeadingCont = tk.Frame(self.window, width=600, height=150, background="#f9fdf7")
         self.carouselCont = tk.Frame(self.window, height=250)
         self.carouselCanvas = tk.Canvas(self.carouselCont, height=260, background='#f9fdf7', highlightthickness=0)
