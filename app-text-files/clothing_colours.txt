@@ -1,28 +1,17 @@
 black
 red
 green
-lime
+light green
 purple
-lilac
-violet
-blue
 yellow
 orange
 pink
 white
 brown
-burgundy
 grey
-mauve
-tan
 beige
-gold
-silver
-olive
 navy
-teal
-cyan
 khaki
 denim
-salmon
-taupe
+light blue
+dark blue
