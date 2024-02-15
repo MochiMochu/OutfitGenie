@@ -26,19 +26,19 @@ class SignUpScreen(tk.Frame):
         # initiating variables to be used
         self.open_homescreen = open_home
         self.close_app = close_app
-        self.SUstyle = ttk.Style()  # for styling the ttk widgets
-        self.FrameStyle = ttk.Style()
+        self.SU_style = ttk.Style()  # for styling the ttk widgets
+        self.frame_style = ttk.Style()
         self.alert_login = user_logged_in
 
         # initiating instance variables to be modified later
-        self.SUusername = None
-        self.SUpassword = None
-        self.confirmedPassword = None
+        self.SU_username = None
+        self.SU_password = None
+        self.confirmed_password = None
         self.location = None
         self.country = None
         self.lat = 0  # longitude to check if the location exists
         self.long = 0  # latitude " "
-        self.SUshow = None
+        self.SU_show = None
         self.headerCont = None
         self.entryCont = None
         self.signUpCont = None
@@ -77,14 +77,14 @@ class SignUpScreen(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        self.SUstyle.configure("TFrame", background="#ddedea")  # configure the frame background
-        self.SUusername = tk.StringVar(self.window)
-        self.SUpassword = tk.StringVar(self.window)
-        self.confirmedPassword = tk.StringVar(self.window)
+        self.SU_style.configure("TFrame", background="#ddedea")  # configure the frame background
+        self.SU_username = tk.StringVar(self.window)
+        self.SU_password = tk.StringVar(self.window)
+        self.confirmed_password = tk.StringVar(self.window)
         self.location = tk.StringVar(self.window)  # tk variables for storing location for weather in the user's area
         self.country = tk.StringVar(self.window)
 
-        self.SUshow = tk.BooleanVar(self.window, True)
+        self.SU_show = tk.BooleanVar(self.window, True)
 
         # initiating the frames containing the widgets
         self.headerCont = ttk.Frame(self.window, height=150, width=600, style="TFrame")
@@ -108,21 +108,21 @@ class SignUpScreen(tk.Frame):
                                        font=("Nirmala UI", 12),
                                        background="#abd3cb",
                                        foreground="#9c9c9c",
-                                       textvariable=self.SUusername,
+                                       textvariable=self.SU_username,
                                        width=45)
         self.SUpasswordEntry = SignUpEntry(self.entryCont, "Password", self.temp_password,
                                            font=("Nirmala UI", 12),
                                            background="#abd3cb",
                                            foreground="#9c9c9c",
                                            show="",
-                                           textvariable=self.SUpassword,
+                                           textvariable=self.SU_password,
                                            width=45)
         self.confirmPasswordEntry = SignUpEntry(self.entryCont, "Confirm password", self.temp_confirm_password,
                                                 font=("Nirmala UI", 12),
                                                 background="#abd3cb",
                                                 foreground="#9c9c9c",
                                                 show="",
-                                                textvariable=self.confirmedPassword,
+                                                textvariable=self.confirmed_password,
                                                 width=45)
 
         self.locationEntry = SignUpEntry(self.entryCont, "Town/City (for weather recommendations)", self.temp_location,
@@ -139,15 +139,15 @@ class SignUpScreen(tk.Frame):
                                         textvariable=self.country,
                                         width=45)
         # configuring ttk widget styles
-        self.SUstyle.configure("TCheckbutton", background="#ddedea", font=("Montserrat", 10))
-        self.SUstyle.configure("TLabel", font=("Montserrat", 10), background="#ddedea")
-        self.SUstyle.configure("TButton", font=("Montserrat", 10))
+        self.SU_style.configure("TCheckbutton", background="#ddedea", font=("Montserrat", 10))
+        self.SU_style.configure("TLabel", font=("Montserrat", 10), background="#ddedea")
+        self.SU_style.configure("TButton", font=("Montserrat", 10))
 
         # widgets for the checkbox to show the password and button for submitting the user's details
         self.SUshowPass = ttk.Checkbutton(self.signUpCont,
                                           text="Show password",
                                           command=self.toggle_password,
-                                          variable=self.SUshow)
+                                          variable=self.SU_show)
         self.SUsignUpButton = ttk.Button(self.signUpCont, text="Sign Up", command=self.username_taken, width=25)
 
         # initiating the labels for error messages
@@ -166,12 +166,12 @@ class SignUpScreen(tk.Frame):
         self.unknownLocation = ttk.Label(self.signUpCont, text="Error, location not found.")
 
         # account successful creation message widget
-        self.FrameStyle.configure("Success.TFrame",
+        self.frame_style.configure("Success.TFrame",
                                   background="#9c9c9c",
                                   highlightbackground="#9c9c9c",
                                   hightlightcolor="#9c9c9c")  # configure frame bg for success message
         self.successCreate = ttk.Frame(self.window, style="Success.TFrame")
-        self.FrameStyle.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
+        self.frame_style.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
         self.successMessage = ttk.Label(self.successCreate, text="Account created successfully", style="Success.TLabel")
 
         # packing all the widgets into their respective framesM
@@ -199,13 +199,13 @@ class SignUpScreen(tk.Frame):
     # deletes the temporary text in password box
     def temp_password(self, event):
         self.SUpasswordEntry.delete(0, "end")
-        self.SUshow.set(False)
+        self.SU_show.set(False)
         self.SUpasswordEntry.config(show="•")
 
     # deletes the temporary text in confirm password box
     def temp_confirm_password(self, event):
         self.confirmPasswordEntry.delete(0, "end")
-        self.SUshow.set(False)
+        self.SU_show.set(False)
         self.confirmPasswordEntry.config(show="•")
 
     # deletes the temporary text in location box
@@ -228,7 +228,7 @@ class SignUpScreen(tk.Frame):
 
     # function for the checkbox toggling whether the password can be seen
     def toggle_password(self):
-        if self.SUshow.get():  # If show is checked, reveal the password
+        if self.SU_show.get():  # If show is checked, reveal the password
             self.SUpasswordEntry.config(show="")
             self.confirmPasswordEntry.config(show="")
         else:
@@ -238,9 +238,9 @@ class SignUpScreen(tk.Frame):
     # check if username has been taken
     def username_taken(self):
         self.unknownLocation.pack_forget()  # unpacks any errors from if the location wasn't valid
-        u = self.SUusername.get()
+        u = self.SU_username.get()
         u = u.lower()
-        p = self.SUpassword.get()
+        p = self.SU_password.get()
         conn = sqlite3.connect("OutfitGenieInfo.db")
         c = conn.cursor()
         select_query = "SELECT * FROM Users where Username = ?"
@@ -267,7 +267,7 @@ class SignUpScreen(tk.Frame):
         self.SUpasswordSymbol.pack_forget()
         self.SUpasswordSpace.pack_forget()
         self.SUusernameTaken.pack_forget()
-        p = self.SUpassword.get()
+        p = self.SU_password.get()
         flags = []
         if len(p) <= 8:
             flags.append("1")
@@ -328,8 +328,8 @@ class SignUpScreen(tk.Frame):
     # check if the password to be confirmed matches the one originally entered
     def confirm_password(self):
         self.unknownLocation.pack_forget()
-        p1 = self.SUpassword.get()  # retrieves the first password entered
-        p2 = self.confirmedPassword.get()  # retrieves the second password entered
+        p1 = self.SU_password.get()  # retrieves the first password entered
+        p2 = self.confirmed_password.get()  # retrieves the second password entered
         if p1 != p2:
             self.SUpasswordNoConfirm.pack()  # packs the error message that the passwords don't match
         else:
@@ -356,8 +356,8 @@ class SignUpScreen(tk.Frame):
 
     # submits user details to the database
     def send_pass(self):
-        u = self.SUusername.get()
-        p = self.SUpassword.get()
+        u = self.SU_username.get()
+        p = self.SU_password.get()
         h_password, salt = self.hash_password_for_storage(p)
         num = self.get_user_num()
         u = u.lower()

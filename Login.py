@@ -26,7 +26,7 @@ class LoginScreen(tk.Frame):
 
         # necessary variables that aren't widgets
         self.style = ttk.Style()  # creates instance of Style class to enable ttk widget editing later
-        self.FrameStyle = ttk.Style()  # creates a separate instance for the account success message
+        self.frame_style = ttk.Style()  # creates a separate instance for the account success message
         self.close_and_open_home = open_home
         self.close_and_open_signup = open_signup
         self.close_app = close_app
@@ -39,7 +39,7 @@ class LoginScreen(tk.Frame):
         self.userEntry = None
         self.passwordEntry = None
         self.logo = None
-        self.logo_image = None
+        self.logoImage = None
         self.btnCont = None
         self.showPass = None
         self.loginButton = None
@@ -80,8 +80,8 @@ class LoginScreen(tk.Frame):
                                          width=45)
         # creating a canvas widget in which the logo image can be created
         self.logo = tk.Canvas(self.window, width=300, height=160, background='#cdf3ff', highlightbackground="#cdf3ff")
-        self.logo_image = self.get_logo()
-        self.logo.create_image(152, 80, image=self.logo_image)
+        self.logoImage = self.get_logo()
+        self.logo.create_image(152, 80, image=self.logoImage)
 
         # configuring ttk widgets before initiating them
         self.style.configure("TFrame", background="#cdf3ff")
@@ -101,10 +101,10 @@ class LoginScreen(tk.Frame):
         # labels for error messages
 
         # account successful login message widget
-        self.FrameStyle.configure("Success.TFrame", background="#9c9c9c", highlightbackground="#9c9c9c",
+        self.frame_style.configure("Success.TFrame", background="#9c9c9c", highlightbackground="#9c9c9c",
                                   hightlightcolor="#9c9c9c")  # configure frame bg for success message
         self.successLogin = ttk.Frame(self.window, style="Success.TFrame")
-        self.FrameStyle.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
+        self.frame_style.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
         self.successMessage = ttk.Label(self.successLogin, text="Logged in", style="Success.TLabel")
 
         # packs the widgets onto the home screen

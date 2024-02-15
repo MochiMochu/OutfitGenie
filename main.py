@@ -1,7 +1,7 @@
 import Wardrobe
 import Login
 import Signup
-import homescreen
+import Homescreen
 import Generate
 import Settings
 import tkinter as tk
@@ -90,7 +90,7 @@ def main():
     # creates instances of each window type and passes in the methods to switch between windows
     login_window = Login.LoginScreen(root, user_logged_in, open_signup, open_home, close_app)
     signup_window = Signup.SignUpScreen(root, user_logged_in, open_home, close_app)
-    home_window = homescreen.HomeScreen(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
+    home_window = Homescreen.HomeScreen(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
     generate_window = Generate.GenerateMenu(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
     settings_window = Settings.SettingsMenu(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
     wardrobe_window = Wardrobe.WardrobeMenu(root, open_home, open_generate, open_wardrobe, open_settings, close_app)

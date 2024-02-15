@@ -16,8 +16,8 @@ class GenerateMenu(tk.Frame):
         super().__init__()
         self.parent = parent
         self.window = None
-        self.ErrorStyle = ttk.Style()
-        self.ErrorFrameStyle = ttk.Style()
+        self.error_style = ttk.Style()
+        self.error_frame_style = ttk.Style()
         self.clothing_categories = {"t-shirt": "top",
                                     "graphic tee": "top",
                                     "polo shirt": "top",
@@ -81,7 +81,7 @@ class GenerateMenu(tk.Frame):
         conn = sqlite3.connect("OutfitGenieInfo.db")
         self.c = conn.cursor()
 
-        # initiating instance variables to be modified later
+        # initiating instance variables for tkinter widgets
         self.button = None
         self.occasionStyle = None
         self.occasionList = None
@@ -104,7 +104,7 @@ class GenerateMenu(tk.Frame):
 
     def create_generate_widgets(self):
         # button for generating a new outfit
-        self.buttonImg = tk.PhotoImage(file="app-images/button.png")
+        self.buttonImg = tk.PhotoImage(file="app-images/GenerateAlgButton.png")
         self.button = tk.Button(self.window,
                                 background="#dcf5df",
                                 borderwidth=0,
@@ -126,11 +126,11 @@ class GenerateMenu(tk.Frame):
         self.chooseOccasion.place(x=60, y=550)
 
         # error message if an occasion hasn't been chosen and the generate button is clicked
-        self.ErrorFrameStyle.configure("Error.TFrame",
+        self.error_frame_style.configure("Error.TFrame",
                                        background="#9c9c9c",
                                        highlightbackground="#9c9c9c",
                                        hightlightcolor="#9c9c9c")
-        self.ErrorStyle.configure("Error.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
+        self.error_style.configure("Error.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
         self.ErrorFrame = ttk.Frame(self.window, style="Error.TFrame")
         self.occasionError = ttk.Label(self.ErrorFrame, text="Please select an occasion", style="Error.TLabel")
         self.occasionError.pack()
@@ -144,11 +144,12 @@ class GenerateMenu(tk.Frame):
     # function to get list of occasions
     def get_occasions(self):
         self.c.execute("""SELECT Occasion_Name FROM Occasions""")
-        response = self.c.fetchall()
-        occasions = []
-        for item in response:
-            for value in item:
-                occasions.append(value)
+        # response = self.c.fetchall()
+        # occasions = []
+        # for item in response:
+        #     for value in item:
+        #         occasions.append(value)
+        occasions = [row[0] for row in self.c.fetchall()]
         return occasions
 
     # fetches the variables necessary to display the weather forecast for the user's area
@@ -173,8 +174,10 @@ class GenerateMenu(tk.Frame):
     def error_not_sufficient(self):
         self.ErrorInsufficientFrame.place(x=0, y=770, relwidth=1)
 
+    # calls functions to determine what outfit will be generated 
     def create_outfits(self):
         occasion = self.occasion.get()
+        # checks if an occasion was entered by the user
         if occasion == "Select Occasion":
             self.ErrorFrame.place(x=0, y=770, relwidth=1)
         else:
@@ -183,6 +186,8 @@ class GenerateMenu(tk.Frame):
             feels_like = int(self.get_weather())  # gets what the current temperature feels like
             possible_items = self.retrieve_occasion_and_user_items(
                 occasion)  # fetches ID of all user items that are appropriate for the occasion
+            
+            # checks if any items exist for the occasion, if not, display an error
             if not possible_items:
                 self.error_not_sufficient()
             else:
@@ -610,7 +615,7 @@ class GenerateMenu(tk.Frame):
                          250]  # x coordinates for where the top left corner of the image will be (different for each item)
         item_y_coords = [5, 280, 40]  # the same but for the y coordinates
         num_items = len(item_ids)
-        background = Image.open("app-images/white_bg.png")  # standard white background to place the item images on
+        background = Image.open("app-images/White_Bg.png")  # standard white background to place the item images on
         resized_bg = background.resize((500, 650))  # resizes the background to display
 
         # loops through the items and places them on the white background according to the coordinates above

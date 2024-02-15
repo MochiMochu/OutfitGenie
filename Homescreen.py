@@ -18,7 +18,7 @@ class HomeScreen(tk.Frame):
         super().__init__()
         self.parent = parent
         self.window = None
-        self.newOutfit = tk.PhotoImage(file="app-images/NewOutfit.png")
+        self.new_outfit = tk.PhotoImage(file="app-images/NewOutfit.png")
 
         # variables for opening new windows
         self.close_and_open_home = open_home
@@ -31,7 +31,7 @@ class HomeScreen(tk.Frame):
         conn = sqlite3.connect("OutfitGenieInfo.db")
         self.c = conn.cursor()
 
-        # initiating instance variables to be modified later
+        # initiating instance variables for the Tkinter widgets
         self.outfitHeadingCont = None
         self.carouselCont = None
         self.carouselCanvas = None
@@ -42,13 +42,6 @@ class HomeScreen(tk.Frame):
         self.generateOutfitsBtn = None
         self.outfitsAvailable = None
         self.carouselButton = None
-        self.place = None
-        self.icon = None
-        self.currentTemp = None
-        self.weatherDesc = None
-        self.highTemp = None
-        self.lowTemp = None
-        self.feelsLike = None
         self.weatherCont = None
         self.weatherHeaderFrame = None
         self.weatherIconFrame = None
@@ -62,6 +55,15 @@ class HomeScreen(tk.Frame):
         self.maxTemp = None
         self.minTemp = None
         self.realFeel = None
+
+        # initiating variables for holding weather information from the API call
+        self.place = None
+        self.icon = None
+        self.current_temp = None
+        self.weather_desc = None
+        self.high_temp = None
+        self.low_temp = None
+        self.feels_ike = None
 
         # starts this window so that it is placed on the topmost level of all the other windows
     def start(self):
@@ -103,7 +105,7 @@ class HomeScreen(tk.Frame):
                                                  highlightthickness=3,
                                                  bd=0)      # border for the button to recommend generating more outfits
         self.generateOutfitsBtn = tk.Button(self.generateOutfitsBtnBorder,
-                                            image=self.newOutfit,
+                                            image=self.new_outfit,
                                             width=150,
                                             height=250,
                                             bd=0,
@@ -140,7 +142,7 @@ class HomeScreen(tk.Frame):
                     print("image not loaded")
 
         # calling function to gather weather forecast information
-        self.place, self.icon, self.currentTemp, self.weatherDesc, self.highTemp, self.lowTemp, self.feelsLike = self.display_weather()
+        self.place, self.icon, self.current_temp, self.weather_desc, self.high_temp, self.low_temp, self.feels_like = self.display_weather()
 
         # frames for weather forecast widget
         self.weatherCont = tk.Frame(self.window, width=100, height=360, background="#e0f7ff")
@@ -164,27 +166,27 @@ class HomeScreen(tk.Frame):
                                      image=self.weatherIcon,
                                      background="#e0f7ff")
         self.displayTemp = tk.Label(self.weatherIconFrame,
-                                    text=str(self.currentTemp) + "°C",
+                                    text=str(self.current_temp) + "°C",
                                     font=("Book Antiqua", 18),
                                     foreground="#5a6275",
                                     background="#e0f7ff")
         self.weatherSummary = tk.Label(self.weatherIconFrame,
-                                       text=self.weatherDesc,
+                                       text=self.weather_desc,
                                        font=("Book Antiqua", 15),
                                        foreground="#5a6275",
                                        background="#e0f7ff")
         self.maxTemp = tk.Label(self.weatherTempFrame,
-                                text="Highs of " + str(self.highTemp) + "°C",
+                                text="Highs of " + str(self.high_temp) + "°C",
                                 font=("Arial Narrow Italic", 15),
                                 foreground="#5a6275",
                                 background="#e0f7ff")
         self.minTemp = tk.Label(self.weatherTempFrame,
-                                text="Lows of " + str(self.lowTemp) + "°C",
+                                text="Lows of " + str(self.low_temp) + "°C",
                                 font=("Arial Narrow Italic", 15),
                                 foreground="#5a6275",
                                 background="#e0f7ff")
         self.realFeel = tk.Label(self.weatherTempFrame,
-                                 text="Feels like "+str(self.feelsLike)+"°C",
+                                 text="Feels like "+str(self.feels_like)+"°C",
                                  font=("Arial", 18),
                                  foreground="#5a6275",
                                  background="#e0f7ff")
@@ -323,13 +325,13 @@ class HomeScreen(tk.Frame):
         # accesses the necessary aspects of the json file and sets them as temp variables to be returned
         location = response["location"]["name"]
         icon = response["current"]["condition"]["icon"]
-        currentTemp = response["current"]["temp_c"]
+        current_temp = response["current"]["temp_c"]
         dayDesc = response["forecast"]["forecastday"][0]["day"]["condition"]["text"]
-        highTemp = response["forecast"]["forecastday"][0]["day"]["maxtemp_c"]
-        lowTemp = response["forecast"]["forecastday"][0]["day"]["mintemp_c"]
-        feelsLike = response["current"]["feelslike_c"]
+        high_temp = response["forecast"]["forecastday"][0]["day"]["maxtemp_c"]
+        low_temp = response["forecast"]["forecastday"][0]["day"]["mintemp_c"]
+        feels_like = response["current"]["feelslike_c"]
 
-        return location, icon, currentTemp, dayDesc, highTemp, lowTemp, feelsLike
+        return location, icon, current_temp, dayDesc, high_temp, low_temp, feels_like
 
     # loads the weather icon from the given url
     def load_weather_icon(self):

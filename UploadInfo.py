@@ -16,8 +16,8 @@ class Popup(tk.Frame):
         self.parent = parent
         self.file_path = path
         self.output_path = "C:/Users/jasmi/PycharmProjects/OutfitGenie/temp-upload-image/item_rembg.png"
-        self.menuStyle = ttk.Style()
-        self.FrameStyle = ttk.Style()
+        self.menu_style = ttk.Style()
+        self.frame_style = ttk.Style()
         self.item_image = None
         self.window = None
 
@@ -97,7 +97,7 @@ class Popup(tk.Frame):
     # gets the list of all item types from the text file
     def get_item_types(self):
         types = []
-        with open("C:/Users/jasmi/PycharmProjects/OutfitGenie/app-text-files/clothing_types.txt", "r") as f:
+        with open("C:/Users/jasmi/PycharmProjects/OutfitGenie/app-text-files/clothingTypes.txt", "r") as f:
             lines = f.readlines()
             for line in lines:
                 types.append(line.strip())
@@ -128,13 +128,13 @@ class Popup(tk.Frame):
     def update_type(self, event):
         value = event.widget.get()
         if value == "":
-            self.clothing_type['values'] = self.all_items_types
+            self.clothingType['values'] = self.all_items_types
         else:
             matches = []
             for item in self.all_items_types:
                 if value.lower() in item.lower():
                     matches.append(item)
-            self.clothing_type['values'] = matches
+            self.clothingType['values'] = matches
 
     # called by the clothing colour dropdown box to filter down the list of colours based on the user's search
     def update_colour(self, event):
@@ -235,104 +235,104 @@ class Popup(tk.Frame):
         self.imageCont.pack(pady=(20, 0))
 
         # creates frames to arrange the placements of dropdown boxes for the user to enter information about their item
-        self.type_widgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
-        self.colour_widgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
-        self.fit_widgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
-        self.occasion_widgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
-        self.warmth_widgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
+        self.typeWidgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
+        self.colourWidgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
+        self.fitWidgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
+        self.occasionWidgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
+        self.warmthWidgets = tk.Frame(self.window, width=450, height=100, background="#dabfde")
 
         # creates the widgets to be placed for the user to enter their item type
-        self.clothing_type_title = tk.Label(self.type_widgets,
+        self.clothingTypeTitle = tk.Label(self.typeWidgets,
                                             text="Clothing Type:",
                                             font=("Nirmala UI Bold", 20),
                                             foreground="#5a6275",
                                             background="#dabfde")
-        self.clothing_type_title.place(x=20, y=30)
-        self.clothing_type = ttk.Combobox(self.type_widgets, textvariable=self.type_input)
-        self.clothing_type['values'] = self.all_items_types
-        self.clothing_type.bind("<KeyRelease>", self.update_type)
-        self.clothing_type.place(x=250, y=44)
-        self.type_widgets.pack()
+        self.clothingTypeTitle.place(x=20, y=30)
+        self.clothingType = ttk.Combobox(self.typeWidgets, textvariable=self.type_input)
+        self.clothingType['values'] = self.all_items_types
+        self.clothingType.bind("<KeyRelease>", self.update_type)
+        self.clothingType.place(x=250, y=44)
+        self.typeWidgets.pack()
 
         # creates the widgets to be placed for the user to enter their item colour
-        self.clothing_colour_title = tk.Label(self.colour_widgets,
+        self.clothingColourTitle = tk.Label(self.colourWidgets,
                                               text="Primary Colour:",
                                               font=("Nirmala UI Bold", 20),
                                               foreground="#5a6275",
                                               background="#dabfde")
-        self.clothing_colour_title.place(x=20, y=30)
-        self.colour = ttk.Combobox(self.colour_widgets, textvariable=self.colour_input)
+        self.clothingColourTitle.place(x=20, y=30)
+        self.colour = ttk.Combobox(self.colourWidgets, textvariable=self.colour_input)
         self.colour['values'] = self.all_colours
         self.colour.bind("<KeyRelease>", self.update_colour)
         self.colour.place(x=250, y=44)
-        self.colour_widgets.pack()
+        self.colourWidgets.pack()
 
         # creates the widgets to be placed for the user to enter the fit of their item
-        self.clothing_fit_title = tk.Label(self.fit_widgets,
+        self.clothingFitTitle = tk.Label(self.fitWidgets,
                                            text="Item Fit:",
                                            font=("Nirmala UI Bold", 20),
                                            foreground="#5a6275",
                                            background="#dabfde")
-        self.clothing_fit_title.place(x=20, y=30)
-        self.fit = ttk.Combobox(self.fit_widgets, textvariable=self.fit_input)
+        self.clothingFitTitle.place(x=20, y=30)
+        self.fit = ttk.Combobox(self.fitWidgets, textvariable=self.fit_input)
         self.fit['values'] = self.all_fits
         self.fit.bind("<KeyRelease>", self.update_fit)
         self.fit.place(x=250, y=44)
-        self.fit_widgets.pack()
+        self.fitWidgets.pack()
 
         # creates the widgets to be placed for the user to enter the warmth of their item
-        self.clothing_warmth_title = tk.Label(self.warmth_widgets,
+        self.clothingWarmthTitle = tk.Label(self.warmthWidgets,
                                               text="Item Thickness:",
                                               font=("Nirmala UI Bold", 20),
                                               foreground="#5a6275",
                                               background="#dabfde")
-        self.clothing_warmth_title.place(x=20, y=30)
-        self.warmth = ttk.Combobox(self.warmth_widgets, textvariable=self.warmth_input)
+        self.clothingWarmthTitle.place(x=20, y=30)
+        self.warmth = ttk.Combobox(self.warmthWidgets, textvariable=self.warmth_input)
         self.warmth['values'] = self.all_warmth
         self.warmth.place(x=250, y=44)
-        self.warmth_widgets.pack()
+        self.warmthWidgets.pack()
 
         # creates the button to open the dropdown menu where the user can select occasions they may wear this item for
-        self.menuStyle.configure("TMenubutton", width=30, font=('Nirmala UI Bold', 12), foreground="#5a6275")
-        self.occasion_menu_button = ttk.Menubutton(self.occasion_widgets, text= "Select Occasions", style="TMenubutton")
-        self.occasion_menu_button.pack()
+        self.menu_style.configure("TMenubutton", width=30, font=('Nirmala UI Bold', 12), foreground="#5a6275")
+        self.occasionMenuButton = ttk.Menubutton(self.occasionWidgets, text= "Select Occasions", style="TMenubutton")
+        self.occasionMenuButton.pack()
         self.option_add("*Menu.activeBackground", "#D8D5DE")
         self.option_add("*Menu.activeForeground", "#5a6275")
         self.option_add("*Menu.font", ("Nirmala UI", 12))
-        self.occasion_mb_menu = tk.Menu(self.occasion_menu_button, tearoff=0)
-        self.occasion_menu_button["menu"] = self.occasion_mb_menu
-        self.occasion_mb_menu.add_checkbutton(label="Black Tie Affair", variable=self.black_tie)
-        self.occasion_mb_menu.add_checkbutton(label="Family Event", variable=self.family_event)
-        self.occasion_mb_menu.add_checkbutton(label="Festive Party", variable=self.festive_party)
-        self.occasion_mb_menu.add_checkbutton(label="Friend Meetup", variable=self.friend_meetup)
-        self.occasion_mb_menu.add_checkbutton(label="Funeral", variable=self.funeral)
-        self.occasion_mb_menu.add_checkbutton(label="House Party", variable=self.house_party)
-        self.occasion_mb_menu.add_checkbutton(label="Job Interview", variable=self.job_interview)
-        self.occasion_mb_menu.add_checkbutton(label="Religious Event", variable=self.religious_event)
-        self.occasion_mb_menu.add_checkbutton(label="Wedding", variable=self.wedding)
-        self.occasion_mb_menu.add_checkbutton(label="Work Function", variable=self.work_function)
-        self.occasion_widgets.pack()
+        self.occasionMBMenu = tk.Menu(self.occasionMenuButton, tearoff=0)
+        self.occasionMenuButton["menu"] = self.occasionMBMenu
+        self.occasionMBMenu.add_checkbutton(label="Black Tie Affair", variable=self.black_tie)
+        self.occasionMBMenu.add_checkbutton(label="Family Event", variable=self.family_event)
+        self.occasionMBMenu.add_checkbutton(label="Festive Party", variable=self.festive_party)
+        self.occasionMBMenu.add_checkbutton(label="Friend Meetup", variable=self.friend_meetup)
+        self.occasionMBMenu.add_checkbutton(label="Funeral", variable=self.funeral)
+        self.occasionMBMenu.add_checkbutton(label="House Party", variable=self.house_party)
+        self.occasionMBMenu.add_checkbutton(label="Job Interview", variable=self.job_interview)
+        self.occasionMBMenu.add_checkbutton(label="Religious Event", variable=self.religious_event)
+        self.occasionMBMenu.add_checkbutton(label="Wedding", variable=self.wedding)
+        self.occasionMBMenu.add_checkbutton(label="Work Function", variable=self.work_function)
+        self.occasionWidgets.pack()
 
         # creates the two buttons for either saving the new item or cancelling the process
-        self.save_button_image = tk.PhotoImage(file="C:/Users/jasmi/PycharmProjects/OutfitGenie/app-images/SaveButton.png")
-        self.save_button = tk.Button(self.window,
+        self.saveButtonImage = tk.PhotoImage(file="C:/Users/jasmi/PycharmProjects/OutfitGenie/app-images/SaveButton.png")
+        self.saveButton = tk.Button(self.window,
                                      background="#dabfde",
                                      borderwidth=0,
                                      command=self.save_to_db)
-        self.save_button.config(image=self.save_button_image)
-        self.save_button.pack(pady=(10, 0))
-        self.cancel_button_image = tk.PhotoImage(file="C:/Users/jasmi/PycharmProjects/OutfitGenie/app-images/CancelButton.png")
-        self.cancel_button = tk.Button(self.window,
+        self.saveButton.config(image=self.saveButtonImage)
+        self.saveButton.pack(pady=(10, 0))
+        self.cancelButtonImage = tk.PhotoImage(file="C:/Users/jasmi/PycharmProjects/OutfitGenie/app-images/CancelButton.png")
+        self.cancelButton = tk.Button(self.window,
                                        background="#dabfde",
                                        borderwidth=0,
                                        command=self.window.withdraw)
-        self.cancel_button.config(image=self.cancel_button_image)
-        self.cancel_button.pack()
+        self.cancelButton.config(image=self.cancelButtonImage)
+        self.cancelButton.pack()
 
-        self.FrameStyle.configure("Error.TFrame", background="#9c9c9c", highlightbackground="#9c9c9c",
+        self.frame_style.configure("Error.TFrame", background="#9c9c9c", highlightbackground="#9c9c9c",
                                   hightlightcolor="#9c9c9c")  # configure frame bg for success message
         self.errorMessageFrame = ttk.Frame(self.window, style="Error.TFrame")
-        self.FrameStyle.configure("Error.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
+        self.frame_style.configure("Error.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
         self.errorMessage = ttk.Label(self.errorMessageFrame, text="Cannot save - one or more fields are empty", style="Error.TLabel")
         self.errorMessage.pack()
 
@@ -359,7 +359,7 @@ class Popup(tk.Frame):
             item_code = colour[0].upper() + fit[0].upper() + type[0].upper()
             new_num, old_num, user_id = self.get_num_id(item_code)
             new_id = item_code + str(new_num).zfill(len(old_num))
-            new_item_query = """INSERT INTO Clothing_Items (Item_ID, User_ID, Clothing_Type, Primary_Colour, Clothing_Fit, Clothing_Thickness, Clothing_Image, Date_Created)
+            new_item_query = """INSERT INTO Clothing_Items (Item_ID, User_ID, clothingType, Primary_Colour, Clothing_Fit, Clothing_Thickness, Clothing_Image, Date_Created)
                                 VALUES (?,?,?,?,?,?,?,?)"""
             self.c.execute(new_item_query, (new_id, user_id, type, colour, fit, warmth, image_to_upload, now_str))
 

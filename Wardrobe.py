@@ -31,6 +31,7 @@ class WardrobeMenu(tk.Frame):
         self.header.pack()
         self.upload_items_button()
 
+    # creates button to open a pop up window for uploading new items
     def upload_items_button(self):
         self.buttonCont = ttk.Frame(self.window)
         self.uploadItemsBorder = tk.Frame(self.buttonCont,
