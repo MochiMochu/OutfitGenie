@@ -3,7 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import ImageTk, Image
 import sqlite3
-import time
+from sqlite3 import Error
+import Signup as SU
 import bcrypt
 import CentreWindow as cw
 
@@ -43,6 +44,7 @@ class LoginScreen(tk.Frame):
         self.btnCont = None
         self.showPass = None
         self.loginButton = None
+        self.forgotPassButton = None
         self.usernameNotFound = None
         self.usernameTaken = None
         self.passwordNoMatch = None
@@ -85,26 +87,31 @@ class LoginScreen(tk.Frame):
 
         # configuring ttk widgets before initiating them
         self.style.configure("TFrame", background="#cdf3ff")
-        self.style.configure("TCheckbutton", background="#cdf3ff", font = ("Montserrat", 10))
-        self.style.configure("TLabel", font= ("Nirmala UI", 10), background="#cdf3ff")
-        self.style.configure("TButton", font= ("Montserrat", 10))
+        self.style.configure("TCheckbutton", background="#cdf3ff", font=("Montserrat", 10))
+        self.style.configure("TLabel", font=("Nirmala UI", 10), background="#cdf3ff")
+        self.style.configure("TButton", font=("Montserrat", 10))
         self.btnCont = ttk.Frame(self.window, height=80, width=200)
         self.showPass = ttk.Checkbutton(self.btnCont,
                                         text="Show password",
                                         command=self.toggle_password,
                                         variable=self.show)
         self.loginButton = ttk.Button(self.btnCont, text="Login/Sign Up", command=self.sign_in, width=15)
+        self.forgotPassButton = ttk.Button(self.btnCont, text="Forgot Password", command=self.recover_password,
+                                           width=15)
 
         # labels for error messages
-        self.usernameNotFound = ttk.Label(self.btnCont, text="Username not found, sign up process starting...", foreground="red")
-        self.passwordNoMatch = ttk.Label(self.btnCont, text="Error, password does not match username.", foreground="red")
+        self.usernameNotFound = ttk.Label(self.btnCont, text="Username not found, sign up process starting...",
+                                          foreground="red")
+        self.passwordNoMatch = ttk.Label(self.btnCont, text="Error, password does not match username.",
+                                         foreground="red")
         # labels for error messages
 
         # account successful login message widget
         self.frame_style.configure("Success.TFrame", background="#9c9c9c", highlightbackground="#9c9c9c",
-                                  hightlightcolor="#9c9c9c")  # configure frame bg for success message
+                                   hightlightcolor="#9c9c9c")  # configure frame bg for success message
         self.successLogin = ttk.Frame(self.window, style="Success.TFrame")
-        self.frame_style.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
+        self.frame_style.configure("Success.TLabel", font=("Montserrat", 15), foreground="#FFFFFF",
+                                   background="#9c9c9c")
         self.successMessage = ttk.Label(self.successLogin, text="Logged in", style="Success.TLabel")
 
         # packs the widgets onto the home screen
@@ -114,6 +121,7 @@ class LoginScreen(tk.Frame):
         self.btnCont.pack(pady=(20, 0))
         self.showPass.pack()
         self.loginButton.pack(pady=(15, 0))
+        self.forgotPassButton.pack(pady=(15, 0))
         self.successMessage.pack()
 
     # deletes the temporary text in username box
@@ -166,7 +174,8 @@ class LoginScreen(tk.Frame):
 
     # checking if the password matches the username in the database
     def check_password(self, tb_checked, login_details, username):
-        hash_check = self.hash_password_for_validation(username, tb_checked) # calls function to hash the user's password attempt
+        hash_check = self.hash_password_for_validation(username,
+                                                       tb_checked)  # calls function to hash the user's password attempt
         if hash_check == login_details[2]:  # checks if the hashed value matches the record in the database
             self.passwordNoMatch.pack_forget()  # removes the label if the password didn't match
             self.save_user(login_details[0])  # saves username to the current user's file
@@ -189,13 +198,16 @@ class LoginScreen(tk.Frame):
 
     # function to display an error if the user enters the wrong password
     def password_error(self):
-        self.usernameNotFound.pack_forget() # clears any previous errors e.g. the user entered a non-existent username
+        self.usernameNotFound.pack_forget()  # clears any previous errors e.g. the user entered a non-existent username
         self.passwordNoMatch.pack(pady=(5, 0))
 
     # function to display an error if the user enters a non-existing username
     def username_not_found(self):
         self.usernameNotFound.pack(pady=(5, 0))  # packs the label for the error
         self.passwordNoMatch.pack_forget()  # removes the label for a non-matching password
+
+    def recover_password(self):
+        recover_password_window = PasswordRecovery(self.window)
 
     # displays login success
     def login_success(self):
@@ -205,3 +217,193 @@ class LoginScreen(tk.Frame):
     def save_user(self, u):
         with open("app-text-files/current_user.txt", "w") as f:
             f.write(u)
+
+
+class PasswordRecovery(SU.SignUpScreen):
+    def __init__(self, parent, *args, **kwargs):
+        # ttk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.window = None
+        self.style = ttk.Style()
+        self.frame_style = ttk.Style()
+        self.conn = sqlite3.connect("OutfitGenieInfo.db")
+        self.c = self.conn.cursor()
+        self.start()
+
+        # string variables to store the values of the input boxes
+        self.username = None
+        self.email = None
+        self.password = None
+        self.confirm_password = None
+        self.show_password = None
+
+        # variables to hold widgets in the menu
+        self.heading = None
+        self.usernameEntry = None
+        self.emailEntry = None
+        self.passwordEntry = None
+        self.confirmPasswordEntry = None
+        self.showPassword = None
+        self.confirmButton = None
+        self.cancelButton = None
+
+        # variables to hold labels for error messages
+        self.usernameNotExist = None
+        self.emailNoMatch = None
+        self.passwordLonger = None
+        self.passwordLower = None
+        self.passwordUpper = None
+        self.passwordNum = None
+        self.passwordSymbol = None
+        self.passwordSpace = None
+        self.passwordNoConfirm = None
+
+        # creating variables to hold frames for organising widgets
+        self.headerCont = None
+        self.inputCont = None
+        self.buttonCont = None
+        self.errorCont = None
+
+    def start(self):
+        self.window = tk.Toplevel(self.parent)
+        cw.centrewin(self.window, 600, 500)
+        self.window.title("Reset Password")
+        self.window.configure(bg="#FDFD96")
+        self.create_widgets()
+
+    def create_widgets(self):
+        # create string and boolean variables for holding input values
+        self.username = tk.StringVar(self.window)
+        self.email = tk.StringVar(self.window)
+        self.password = tk.StringVar(self.window)
+        self.confirm_password = tk.StringVar(self.window)
+        self.show_password = tk.BooleanVar(self.window, True)
+
+        # creating frames for organising widgets
+        self.style.configure("TFrame", background="#FDFD96")
+        self.headerCont = ttk.Frame(self.window, height=125, width=600, style="TFrame")
+        self.inputCont = ttk.Frame(self.window, height=150, width=600, style="TFrame")
+        self.buttonCont = ttk.Frame(self.window, height=125, width=600, style="TFrame")
+        self.errorCont = ttk.Frame(self.window, height=100, width=600, style="TFrame")
+
+        # creating header for the page
+        self.heading = ttk.Label(self.headerCont,
+                                 text="Reset your password here.",
+                                 background="#FDFD96",
+                                 foreground="#7E7E7E",
+                                 font=("Montserrat ExtraBold", 28))
+
+        # creating entry boxes
+        self.usernameEntry = CustomEntry(self.inputCont, "Username", self.temp_username,
+                                         font=("Nirmala UI", 12),
+                                         foreground="#989898",
+                                         textvariable=self.username,
+                                         width=45)
+        self.emailEntry = CustomEntry(self.inputCont, "Email", self.temp_email,
+                                      font=("Nirmala UI", 12),
+                                      foreground="#989898",
+                                      show="",
+                                      textvariable=self.email,
+                                      width=45)
+        self.passwordEntry = CustomEntry(self.inputCont, "Username", self.temp_password,
+                                         font=("Nirmala UI", 12),
+                                         foreground="#989898",
+                                         textvariable=self.password,
+                                         width=45)
+        self.confirmPasswordEntry = CustomEntry(self.inputCont, "Password", self.temp_confirm_password,
+                                                font=("Nirmala UI", 12),
+                                                foreground="#989898",
+                                                show="",
+                                                textvariable=self.confirm_password,
+                                                width=45)
+
+        # creating checkbutton to show and hide passwords
+        self.style.configure("TCheckbutton", background="#FDFD96", font=("Montserrat", 10))
+        self.showPassword = ttk.Checkbutton(self.inputCont,
+                                            text="Show password",
+                                            command=self.toggle_password,
+                                            variable=self.show_password)
+
+        # creating buttons to either save the changes or cancel the process
+        self.style.configure("TButton", font=("Montserrat", 10))
+        self.confirmButton = ttk.Button(self.buttonCont, text="Save Changes", command=self.check_info, width=25)
+        self.cancelButton = ttk.Button(self.buttonCont, text="Cancel", command=self.window.withdraw, width=25)
+
+        # creating error messages for unknown usernames and bad passwords
+        self.style.configure("TLabel", font=("Montserrat", 10), background="#FDFD96")
+        self.usernameNotExist = ttk.Label(self.errorCont, text="Error, username not found", style="TLabel")
+        self.emailNoMatch = ttk.Label(self.errorCont, text="Email does not match username", style="TLabel")
+        self.passwordLonger = ttk.Label(self.errorCont, text="✖ Password must be longer than 8 letters", style="TLabel")
+        self.passwordLower = ttk.Label(self.errorCont, text="✖ Password must contain lower case letters",
+                                       style="TLabel")
+        self.passwordUpper = ttk.Label(self.errorCont, text="✖ Password must contain upper case letters",
+                                       style="TLabel")
+        self.passwordNum = ttk.Label(self.errorCont, text="✖ Password must contain one or more numbers", style="TLabel")
+        self.passwordSymbol = ttk.Label(self.errorCont,
+                                        text="✖ Password must contain one or more special symbols (_@$#?£!;/%^&*()+=~<>.,-)",
+                                        style="TLabel")
+        self.passwordSpace = ttk.Label(self.errorCont, text="✖ Password must contain no whitespace characters",
+                                       style="TLabel")
+        self.passwordNoConfirm = ttk.Label(self.errorCont, text="Error, password entries do not match.", style="TLabel")
+
+        # packing widgets into respective frames
+        self.heading.pack(pady=10)
+        self.usernameEntry.pack(pady=8)
+        self.emailEntry.pack(pady=8)
+        self.passwordEntry.pack(pady=8)
+        self.confirmPasswordEntry.pack(pady=8)
+        self.showPassword.pack(pady=10)
+        self.confirmButton.pack(side="right", pady=10)
+        self.cancelButton.pack(side="left", pady=10)
+
+        # packing frames into window
+        self.headerCont.pack()
+        self.inputCont.pack(pady=10)
+        self.buttonCont.pack()
+
+    # calls functions to check the user's inputs are valid
+    def check_info(self):
+        # checks if the email matches the username entered
+        if self.match_user_email():
+            # checks if the password is a valid password (ie secure enough)
+            flags = self.password_validity()
+            if self.password_errors(flags):
+                # checks if the entered passwords match
+                if self.confirm_password():
+                    # calls the function to update the password if security is acceptable and passwords are matching
+                    self.update_password()
+        else:
+            # displays an error if the email is found to not match the username entered
+            self.emailNoMatch.pack()
+
+    def match_user_email(self):
+        username = self.username.get()
+        email = self.email.get()
+        username_query = "SELECT Email FROM Users WHERE Username = ?"
+        self.c.execute(username_query, (username,))
+        response = self.c.fetchall()
+        if len(response) == 0:
+            self.usernameNotExist.pack()
+        else:
+            email = [row[0] for row in response]
+            if email[0] == email:
+                return True
+            else:
+                return False
+
+    # update the password and matching salt in the database
+    def update_password(self):
+        username = self.username.get()
+        password = self.password.get()
+        email = self.email.get()
+        hashed, salt = self.hash_password_for_storage(password)
+        query = """UPDATE Users SET Password = ?, Salt = ?
+                    WHERE Username = ? AND Email = ?"""
+        try:
+            self.c.execute(query, (hashed, salt, username, email))
+        except Error as e:
+            print(e)
+
+# notes for working on tomorrow: getting an error in the text boxes where it says NoneType object has no attribute 'delete'
+# ie the string variables are just empty
+# possibly due to clash with inheriting class , need to see if assigning them None here overrides Signup class etc.
