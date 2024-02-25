@@ -4,71 +4,33 @@ import sqlite3
 from PIL import Image, ImageTk, ImageChops
 import MenuHeader as header
 import requests
-import datetime
+from datetime import datetime
 import io
 import CentreWindow as cw
 import random
+import os
+import time
+import uuid
 
 
 class GenerateMenu(tk.Frame):
     def __init__(self, parent, open_home, open_generate, open_wardrobe, open_settings, close_app, *args, **kwargs):
-        ttk.Frame.__init__(self, parent, *args, **kwargs)
-        super().__init__()
+        tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.window = None
         self.error_style = ttk.Style()
         self.error_frame_style = ttk.Style()
-        self.clothing_categories = {"t-shirt": "top",
-                                    "graphic tee": "top",
-                                    "polo shirt": "top",
-                                    "corset": "top",
-                                    "off the shoulder top": "top",
-                                    "bodysuit": "top",
-                                    "camisole": "top",
-                                    "crop top": "top",
-                                    "tube top": "top",
-                                    "tank top": "top",
-                                    "formal shirt": "top",
-                                    "blouse": "top",
-                                    "turtleneck": "top",
-                                    "jumper": "outerwear",
-                                    "cardigan": "outerwear",
-                                    "sweatshirt": "outerwear",
-                                    "hoodie": "outerwear",
-                                    "joggers": "bottom",
-                                    "jeans": "bottom",
-                                    "cargo pants": "bottom",
-                                    "flares": "bottom",
-                                    "leggings": "bottom",
-                                    "slacks": "bottom",
-                                    "suit pants": "bottom",
-                                    "hot pants": "bottom",
-                                    "bermuda shorts": "bottom",
-                                    "shorts": "bottom",
-                                    "mini skirt": "bottom",
-                                    "midi skirt": "bottom",
-                                    "maxi skirt": "bottom",
-                                    "mini dress": "onepiece",
-                                    "midi dress": "onepiece",
-                                    "maxi dress": "onepiece",
-                                    "bodycon dress": "onepiece",
-                                    "dungarees": "onepiece",
-                                    "jumpsuit": "onepiece",
-                                    "overalls": "onepiece",
-                                    "blazer": "outerwear",
-                                    "gilet": "outerwear",
-                                    "fur coat": "outerwear",
-                                    "puffer coat": "outerwear",
-                                    "jacket": "outerwear",
-                                    "parka": "outerwear",
-                                    "trench coat": "outerwear"
-                                    }
+        self.newoutfit_path = "temp-outfit-images/newoutfit.png"
+
+        # variable to track presence of outfit confirmation popup
+        self.outfit_confirmation_window = None
+
+        # reference for image object when displaying generated outfit
+        self.generatedOutfit = None
+
         self.long_bottoms = ["joggers", "jeans", "cargo pants", "flares", "leggings", "slacks", "suit pants",
-                             "dungarees", "jumpsuit", "overalls"]
-        self.short_bottoms = ["hot pants", "shorts", "bermuda shorts", "mini skirt", "midi skirt", "bodycon dress",
-                              "mini dress"]
-        self.coats = ["blazer", "gilet", "fur coat", "puffer coat", "jacket", "parka", "trench coat"]
-        self.jumpers = ["jumper", "cardigan", "sweatshirt", "hoodie"]
+                             "maxi skirt"]
+        self.short_bottoms = ["hot pants", "shorts", "bermuda shorts", "mini skirt", "midi skirt"]
 
         # variables for opening new windows
         self.close_and_open_home = open_home
@@ -78,8 +40,8 @@ class GenerateMenu(tk.Frame):
         self.close_app = close_app
 
         # initiating the database calls
-        conn = sqlite3.connect("OutfitGenieInfo.db")
-        self.c = conn.cursor()
+        self.conn = sqlite3.connect("OutfitGenieInfo.db")
+        self.c = self.conn.cursor()
 
         # initiating instance variables for tkinter widgets
         self.button = None
@@ -126,29 +88,30 @@ class GenerateMenu(tk.Frame):
         self.chooseOccasion.place(x=60, y=550)
 
         # error message if an occasion hasn't been chosen and the generate button is clicked
-        self.error_frame_style.configure("Error.TFrame",
-                                       background="#9c9c9c",
-                                       highlightbackground="#9c9c9c",
-                                       hightlightcolor="#9c9c9c")
-        self.error_style.configure("Error.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
-        self.ErrorFrame = ttk.Frame(self.window, style="Error.TFrame")
-        self.occasionError = ttk.Label(self.ErrorFrame, text="Please select an occasion", style="Error.TLabel")
+        self.error_frame_style.configure("Alert.TFrame",
+                                         background="#9c9c9c",
+                                         highlightbackground="#9c9c9c",
+                                         hightlightcolor="#9c9c9c")
+        self.error_style.configure("Alert.TLabel", font=("Montserrat", 15), foreground="#FFFFFF", background="#9c9c9c")
+        self.ErrorFrame = ttk.Frame(self.window, style="Alert.TFrame")
+        self.occasionError = ttk.Label(self.ErrorFrame, text="Please select an occasion", style="Alert.TLabel")
         self.occasionError.pack()
 
         # error message if there aren't enough clothing items to be able to generate an outfit
-        self.ErrorInsufficientFrame = ttk.Frame(self.window, style="Error.TFrame")
-        self.insufficientError = ttk.Label(self.ErrorInsufficientFrame, text="Insufficient items uploaded",
-                                           style="Error.TLabel")
+        self.errorInsufficientFrame = ttk.Frame(self.window, style="Alert.TFrame")
+        self.insufficientError = ttk.Label(self.errorInsufficientFrame, text="Insufficient items uploaded",
+                                           style="Alert.TLabel")
+
+        # success message if an outfit was generated
+        self.successMessageFrame = ttk.Frame(self.window, style="Alert.TFrame")
+        self.successCreation = ttk.Label(self.successMessageFrame, text="Outfit saved", style="Alert.TLabel")
+        self.successCreation.pack()
+
         self.insufficientError.pack()
 
     # function to get list of occasions
     def get_occasions(self):
         self.c.execute("""SELECT Occasion_Name FROM Occasions""")
-        # response = self.c.fetchall()
-        # occasions = []
-        # for item in response:
-        #     for value in item:
-        #         occasions.append(value)
         occasions = [row[0] for row in self.c.fetchall()]
         return occasions
 
@@ -172,7 +135,7 @@ class GenerateMenu(tk.Frame):
 
     # displays error message that the number of items uploaded is not enough for an outfit to be generated
     def error_not_sufficient(self):
-        self.ErrorInsufficientFrame.place(x=0, y=770, relwidth=1)
+        self.errorInsufficientFrame.place(x=0, y=770, relwidth=1)
 
     # calls functions to determine what outfit will be generated 
     def create_outfits(self):
@@ -182,41 +145,48 @@ class GenerateMenu(tk.Frame):
             self.ErrorFrame.place(x=0, y=770, relwidth=1)
         else:
             occasion = self.occasion.get()  # fetches the user-entered occasion from the dropdown box
+            occasion_id = self.retrieve_occasion_id(occasion)
             self.ErrorFrame.place_forget()
             feels_like = int(self.get_weather())  # gets what the current temperature feels like
             possible_items = self.retrieve_occasion_and_user_items(
                 occasion)  # fetches ID of all user items that are appropriate for the occasion
-            
-            # checks if any items exist for the occasion, if not, display an error
+            # checks if any items exist for the occasion, if not, display an error informing the user that there are too
+            # few items
             if not possible_items:
                 self.error_not_sufficient()
             else:
+                self.errorInsufficientFrame.place_forget()
                 tops, bottoms, onepieces, outerwear = self.sort_items(
                     possible_items)  # sorts IDs into categories of clothing
+                print("tops and bottoms", tops, bottoms)
                 check_sufficient = self.check_enough_items(tops, bottoms)
                 if not check_sufficient:
                     self.error_not_sufficient()
                 else:
+                    self.errorInsufficientFrame.place_forget()
+                    # determines requirements for clothing based on the current temperature
                     thickness, outerwear_needed, bottoms_type = self.requirements_by_temperature(feels_like)
-                    temp_tops, temp_bottoms, temp_onepieces, outerwear_result = self.filter_by_temperature(thickness, outerwear_needed, bottoms_type, tops, bottoms, outerwear, onepieces)
-
+                    chosen_ids = self.filter_by_temperature(thickness, bottoms_type, tops, bottoms, onepieces,
+                                                            occasion_id, outerwear_needed)
+                    print(chosen_ids)
+                    self.call_colour_filtering(chosen_ids, occasion, outerwear_needed, outerwear)
                     # if outerwear_result is None:
 
-
-
+    # reduces the list of IDs of the user items to those suitable for the occasion entered
     def retrieve_occasion_and_user_items(self, occasion):
         occasion_id = self.retrieve_occasion_id(occasion)
         all_items = self.retrieve_user_items()
         available_items = []
+        # checks each of the user's items - if they match the occasion, they are appended to the list
         for item in all_items:
-            occasion_and_user_query = """SELECT Item_ID FROM Items_Occasions WHERE Item_ID = ? AND Occasion_ID = ?"""
+            occasion_and_user_query = """SELECT Item_ID FROM Clothing_Occasions WHERE Item_ID = ? AND Occasion_ID = ?"""
             self.c.execute(occasion_and_user_query, (item, occasion_id))
             response = self.c.fetchall()
             if response:
                 available_items.append(response[0][0])
         return available_items
 
-    # get the occasion
+    # get the occasion_id from the occasion_name
     def retrieve_occasion_id(self, occasion):
         occasion_id_query = """SELECT Occasion_ID FROM Occasions WHERE Occasion_Name = ?"""
         self.c.execute(occasion_id_query, (occasion,))
@@ -224,6 +194,7 @@ class GenerateMenu(tk.Frame):
         occasion_id = response[0][0]
         return occasion_id
 
+    # returns the IDs of all the user's items
     def retrieve_user_items(self):
         user_id = self.get_user_id()
         occasion_item_query = """SELECT Item_ID FROM Clothing_Items WHERE User_ID = ?"""
@@ -243,32 +214,26 @@ class GenerateMenu(tk.Frame):
 
     # sorts the IDs into separate lists for what type of clothing they are (tops, bottoms, outerwear or one-pieces)
     def sort_items(self, possible_items):
-        # returns the clothing type of every item in the list of acceptable items for the occasion
+        # returns the clothing type of every item in the list of occasion suitable items
+        all_types = []
         type_query = """SELECT Clothing_Type FROM Clothing_Items WHERE Item_ID = ?"""
         for id in possible_items:
             self.c.execute(type_query, (id,))
-        response = self.c.fetchall()
+            response = self.c.fetchall()
+            all_types.append(response[0][0])
 
-        # adds the returned clothing types to a list
-        all_types = []
-        for count in response:
-            for type in count:
-                all_types.append(type)
-
-        # convert the type of clothing into the category (bottom, top, onepiece or outerwear)
-        # references the dictionary above in the init method that defines what clothing category each item is
-        # changes each item in the types list to be the category of the item
-        for i in range(len(all_types)):
-            all_types[i] = self.clothing_categories[all_types[i].lower()]
+        # convert the type of clothing into the level (bottom, top, onepiece or outerwear)
+        level_query = """SELECT Level FROM Clothing_Levels WHERE Clothing_Type = ?"""
+        for count, type in enumerate(all_types):
+            self.c.execute(level_query, (type,))
+            result = self.c.fetchall()
+            all_types[count] = result[0][0]
 
         # split the item IDs into lists depending on their category
         tops = []
         bottoms = []
         onepieces = []
         outerwear = []
-        # goes through each of the values in the all_types list (which now consists of only clothing categories)
-        # checks if the value is a bottom, top, one piece or outerwear and appends the ID to the list accordingly
-        # (since the order is unchanged so the index for the item type in the all_types list is the same as the originally passed in list of IDs
         for j in range(len(all_types)):
             if all_types[j] == "bottom":
                 bottoms.append(possible_items[j])
@@ -286,81 +251,75 @@ class GenerateMenu(tk.Frame):
         if len(tops) == 0 or len(bottoms) == 0:
             return False
         else:
-            check_thickness_query = """SELECT Clothing_Thickness FROM Clothing_Items WHERE Item_ID = ?"""
-            # checking if there is at least one item of each thickness in the top and bottoms section for minimum outfit generation
-            top_thickness_check = []
-            for item in tops:
-                self.c.execute(check_thickness_query, (item,))
-            response = self.c.fetchall()
-            for i in range(len(response[0])):
-                top_thickness_check.append(response[0][i])
-            top_thickness_check = list(dict.fromkeys(top_thickness_check))
-            variants = 0
-            for value in top_thickness_check:
-                if value.lower() == "thick" or value.lower() == "medium" or value.lower() == "thin":
-                    variants += 1
-            if variants != 3:
-                return False
-            else:
-                bottom_thickness_check = []
-                for item in bottoms:
-                    self.c.execute(check_thickness_query, (item,))
-                response = self.c.fetchall()
-                for i in range(len(response[0])):
-                    bottom_thickness_check.append(response[0][i])
-                bottom_thickness_check = list(dict.fromkeys(bottom_thickness_check))
-                variants = 0
-                for value in bottom_thickness_check:
-                    if value.lower() == "thick" or value.lower() == "medium" or value.lower() == "thin":
-                        variants += 1
-                if variants != 3:
-                    return False
-                else:
+            # checks if there are tops and bottoms of each thickness so an outfit appropriate for the weather is generated
+            if self.check_thickness(tops):
+                if self.check_thickness(bottoms):
                     # checking if there is at least one item of each bottom length for minimum outfit generation
                     num_long = 0
                     num_short = 0
                     check_bottom_length_query = """SELECT Clothing_Type FROM Clothing_Items where Item_ID = ?"""
                     for item in bottoms:
                         self.c.execute(check_bottom_length_query, (item,))
-                    response = self.c.fetchall()
-                    for record in response:
-                        for entry in record:
-                            if entry.lower() in self.long_bottoms:
-                                num_long += 1
-                            else:
-                                num_short += 1
+                        response = self.c.fetchall()
+                        entry = response[0][0]
+                        if entry.lower() in self.long_bottoms:
+                            num_long += 1
+                        else:
+                            num_short += 1
                     if num_short < 1 or num_long < 1:
                         return False
                     else:
                         return True
+                else:
+                    return False
+            else:
+                return False
+
+    # function called to check whether there is an item of each thickness in the given set of clothing IDs
+    def check_thickness(self, clothing_ids):
+        check_thickness_query = """SELECT Clothing_Thickness FROM Clothing_Items WHERE Item_ID = ?"""
+        thicknesses = []
+        for item in clothing_ids:
+            self.c.execute(check_thickness_query, (item,))
+            response = self.c.fetchall()
+            thicknesses.append(response[0][0])
+        # removing duplicates by converting to a dictionary and back
+        thicknesses = list(dict.fromkeys(thicknesses))
+        variants = 0
+        for value in thicknesses:
+            if value == "thick" or value == "medium" or value == "thin":
+                variants += 1
+        if variants != 3:
+            return False
+        else:
+            return True
 
     # filters down the list of IDs based on the current real feel temperature
     def requirements_by_temperature(self, feels_like):
         # creates requirements of clothing thickness depending on the temperature
         thickness = ""
-        outerwear_needed = ""
+        outerwear_needed = False
         bottoms_type = ""
         if feels_like <= 13:
             thickness = "thick"
-            outerwear_needed = "coats"
+            outerwear_needed = True
             bottoms_type = "long"
         elif 13 < feels_like <= 20:
-            thickness = "medium"
-            outerwear_needed = "either"
+            thickness = "thick"
+            outerwear_needed = True
             bottoms_type = "long"
         elif 20 < feels_like <= 25:
-            thickness = "thin"
-            outerwear_needed = "jumpers"
-            bottom_types = "short"
+            thickness = "medium"
+            outerwear_needed = False
+            bottoms_types = "short"
         else:
             thickness = "thin"
-            outerwear_needed = "none"
+            outerwear_needed = False
             bottoms_type = "short"
         return thickness, outerwear_needed, bottoms_type
 
-    def filter_by_temperature(self, thickness, outerwear_needed, bottoms_type, tops, bottoms, outerwear, onepieces):
-        outerwear_available = False  # variable to track whether there is outerwear matching the requirements
-
+    # filtering the items down by the requirements based on temperature
+    def filter_by_temperature(self, thickness, bottoms_type, tops, bottoms, onepieces, occasion_id, outerwear_needed):
         # query the database to return only the items that are of the required thickness
         tops_placeholder = ", ".join("?" * len(tops))
         onepieces_placeholder = ", ".join("?" * len(onepieces))
@@ -373,189 +332,237 @@ class GenerateMenu(tk.Frame):
         self.c.execute(onepieces_query, (thickness, *onepieces))
         filtered_onepieces = [row[0] for row in self.c.fetchall()]
 
-        # filter outerwear according to the requirements returned from the method above - if none are available, the outfit is generated with top and bottoms only
-        if outerwear:
-            outerwear_placeholder = ", ".join("?" * len(outerwear))
-            if outerwear_needed == "coats":
-                coats_placeholder = ", ".join("?" * len(self.coats))
-                coat_query = f"""SELECT DISTINCT Item_ID FROM Clothing_Items
-                            JOIN (
-                                VALUES {outerwear_placeholder} 
-                            ) AS Outerwear_IDs(Item_ID) ON Clothing_Items.Item_ID = Outerwear_IDs.Item_ID
-                            JOIN (
-                                VALUES {coats_placeholder}
-                            ) AS Clothing_Type(Coats_Type) ON Clothing_Items.Clothing_Type = Clothing_Type.Coats_Type;"""
-                coat_parameters = outerwear + self.coats
-                self.c.execute(coat_query, coat_parameters)
-                if self.c.fetchall():
-                    filtered_outerwear = [row[0] for row in self.c.fetchall()]
-                    outerwear_available= True
-                else:
-                    outerwear_available = False
-            elif outerwear_needed == "jumpers":
-                jumpers_placeholder = ", ".join("?" * len(self.jumpers))
-                jumper_query = f"""SELECT DISTINCT Item_ID FROM Clothing_Items
-                            JOIN (
-                                VALUES {outerwear_placeholder} 
-                            ) AS Outerwear_IDs(Item_ID) ON Clothing_Items.Item_ID = Outerwear_IDs.Item_ID
-                            JOIN (
-                                VALUES {jumpers_placeholder}
-                            ) AS Clothing_Type(Coats_Type) ON Clothing_Items.Clothing_Type = Clothing_Type.Coats_Type;"""
-                jumper_parameters = outerwear + self.jumpers
-                self.c.execute(jumper_query, jumper_parameters)
-                if self.c.fetchall():
-                    filtered_outerwear = [row[0] for row in self.c.fetchall()]
-                    outerwear_available = True
-                else:
-                    outerwear_available = False
-            elif outerwear_needed == "either":
-                outerwear_available = True
-            else:
-                outerwear_available = False
-        else:
-            outerwear_available = False
-
         # filtering the bottoms by the required length
         bottoms_placeholder = ", ".join("?" * len(bottoms))
         if bottoms_type == "long":
             bottom_length_placeholder = ", ".join("?" * len(self.long_bottoms))
-            bottoms_query = f"""SELECT DISTINCT Item_ID FROM Clothing_Items
-                            JOIN (
-                                VALUES {bottoms_placeholder} 
-                            ) AS Bottoms_ID(Item_ID) ON Clothing_Items.Item_ID = Bottoms_ID.Item_ID
-                            JOIN (
-                                VALUES {bottom_length_placeholder}
-                            ) AS Clothing_Type(Coats_Type) ON Clothing_Items.Clothing_Type = Clothing_Type.Coats_Type;"""
-            bottoms_parameters = bottoms + self.long_bottoms
-            self.c.execute(bottoms_query, bottoms_parameters)
+            bottoms_query = f"""SELECT Item_ID FROM Clothing_Items WHERE Item_ID IN ({bottoms_placeholder})
+                                AND Clothing_Type IN ({bottom_length_placeholder})"""
+            self.c.execute(bottoms_query, (*bottoms, *self.long_bottoms))
             filtered_bottoms = [row[0] for row in self.c.fetchall()]
         else:
             bottom_length_placeholder = ", ".join("?" * len(self.short_bottoms))
-            bottoms_query = f"""SELECT DISTINCT Item_ID FROM Clothing_Items
-                            JOIN (
-                                VALUES {bottoms_placeholder} 
-                            ) AS Bottoms_ID(Item_ID) ON Clothing_Items.Item_ID = Bottoms_ID.Item_ID
-                            JOIN (
-                                VALUES {bottom_length_placeholder}
-                            ) AS Clothing_Type(Coats_Type) ON Clothing_Items.Clothing_Type = Clothing_Type.Coats_Type;"""
-            bottoms_parameters = bottoms + self.short_bottoms
-            self.c.execute(bottoms_query, bottoms_parameters)
+            bottoms_query = f"""SELECT Item_ID FROM Clothing_Items WHERE Item_ID IN ({bottoms_placeholder})
+                                AND Clothing_Type IN ({bottom_length_placeholder})"""
+            self.c.execute(bottoms_query, (*bottoms, *self.short_bottoms))
             filtered_bottoms = [row[0] for row in self.c.fetchall()]
 
-        if outerwear_available == True:
-            return filtered_tops, filtered_bottoms, filtered_onepieces, filtered_outerwear
+        tops_and_bottoms = [filtered_tops, filtered_bottoms]
+        if filtered_onepieces:
+            chosen_ids = self.determine_onepiece(filtered_onepieces, tops, occasion_id)
+            if len(chosen_ids) == 0:
+                return tops_and_bottoms
+            else:
+                return chosen_ids
         else:
-            return filtered_tops, filtered_bottoms, filtered_onepieces, None
+            return tops_and_bottoms
+
+    # determines if the outfit should consist of a top and bottom or a one-piece item
+    def determine_onepiece(self, filtered_onepieces, tops, occasion_id):
+        chosen_ids = []
+        no_colour_preference = ["FM", "FE", "FP", "RE",
+                                "HP"]  # the list of occasion IDs where there is no need for colour filtering
+        options = ["tops", "onepiece"]
+        if len(filtered_onepieces) != 0:
+            base = random.choice(options)
+            print(base)
+            if base == "onepiece" and occasion_id in no_colour_preference:
+                # check exactly what clothing type each ID is
+                onepiece_type_query = "SELECT Item_ID, Clothing_Type FROM Clothing_Items WHERE Item_ID = ?"
+                onepiece_types = []
+                onepieces_and_ids = []
+                for item in filtered_onepieces:
+                    self.c.execute(onepiece_type_query, (item,))
+                    response = self.c.fetchall()
+                    onepiece_types.append(response[0][1])
+                    onepieces_and_ids.append(response[0])
+                unique_types = list(dict.fromkeys(onepiece_types))
+                onepiece = random.choice(unique_types)
+
+                # picks a top to be worn underneath if dungarees was chosen and appends IDs of both items to the list
+                if onepiece == "dungarees":
+                    chosen_ids.append(random.choice(tops))
+                    chosen_ids.append(random.choice([pair[0] for pair in onepieces_and_ids if pair[1] == "dungarees"]))
+                    return chosen_ids
+                else:
+                    # returns ID of the chosen one-piece item
+                    chosen_ids.append(random.choice([pair[0] for pair in onepieces_and_ids if pair[1] == onepiece]))
+                    return chosen_ids
+            elif base == "onepiece" and occasion_id not in no_colour_preference:
+                # checks if there is a one-piece item with an appropriate colour for the occasion
+                check_onepiece = self.check_onepiece_colour(filtered_onepieces, occasion_id)
+                if len(check_onepiece) != 0:
+                    return random.choice(check_onepiece)
+                else:
+                    return chosen_ids
+            else:
+                return chosen_ids
+        else:
+            return chosen_ids
+
+    # checks if there are one-piece items that are in a suitable colour for the occasion - if not tops and bottoms are chosen
+    def check_onepiece_colour(self, onepieces, occasion_id):
+        appropriate_ids = []
+        onepiece_placeholder = ", ".join("?" * len(onepieces))
+        occasion_colour = """SELECT Appropriate_Colour FROM Occasion_Colours WHERE Occasion_ID = ?"""
+        item_colour = f"""SELECT Primary_Colour FROM Clothing_Items WHERE Item_ID in ({onepiece_placeholder})"""
+        self.c.execute(occasion_colour, (occasion_id,))
+        appropriate_colours = [row[0] for row in self.c.fetchall()]
+        self.c.execute(item_colour, *onepieces)
+        item_colours = [row[0] for row in self.c.fetchall()]
+        for count, colour in enumerate(item_colours):
+            if colour in appropriate_colours:
+                appropriate_ids.append(onepieces[count])
+
+        return appropriate_ids
+
+    # decides if colour filtering needs to be applied, dependent on if one-pieces were chosen or not
+    def call_colour_filtering(self, chosen_ids, occasion, outerwear_needed, outerwear):
+        # if only one list is present, a onepiece was chosen
+        if len(chosen_ids) == 1:
+            chosen_ids.append("None")
+            if outerwear_needed and len(outerwear) != 0:
+                outerwear_id = random.choice(outerwear)
+                chosen_ids.append(outerwear_id)
+            else:
+                chosen_ids.append("None")
+            self.retrieve_selected_images(chosen_ids)
+            time.sleep(2)
+            self.compile_images(chosen_ids)
+        elif len(chosen_ids) == 2:
+            no_colour_preference = ["FM", "FE", "FP", "RE",
+                                    "HP"]  # the list of occasion IDs where there is no need for colour filtering
+            occasion_id = self.retrieve_occasion_id(occasion)
+            if occasion_id in no_colour_preference:
+                self.filter_by_colour(chosen_ids[0], chosen_ids[1], outerwear_needed, outerwear)
+            else:
+                ids = [chosen_ids[0], chosen_ids[1]]
+                self.occasion_filter_by_colour(ids, occasion_id, outerwear_needed, outerwear)
 
     # filters the clothing items down by colour logic
-    def filter_by_colour(self, tops, bottoms, onepieces, occasion):
+    def filter_by_colour(self, tops, bottoms, outerwear_needed, outerwear):
         # creates placeholders for the number of items there are in each category so values can be substituted in
         colour_tops_placeholders = ", ".join("?" * len(tops))
-        colour_bottoms_placeholders = ", ".join("?" * len(bottoms))
-        colour_onepieces_placeholders = ", ".join("?" * len(onepieces))
+        available_tops = ""
+        available_bottoms = ""
 
-        no_colour_preference = ["FM", "FE", "FP", "RE", "HP"]  # the list of occasion IDs where there is no need for colour filtering
-        occasion_id = self.retrieve_occasion_id(occasion)
+        colours = self.get_colours()  # fetches list of all colours
+        colour_match = False
+        while not colour_match:
+            if len(colours) == 0:
+                self.create_non_colour_coordinated_outfit(tops, bottoms, outerwear, outerwear_needed)
+                break
+            else:
+                # picks a random main colour
+                main_colour = random.choice(colours)
+                print(main_colour)
+                colours.remove(main_colour)
 
-        # checks if the occasion requires occasion-colour filtering
-        if occasion_id in no_colour_preference:
-            colours = self.get_colours()  # fetches list of all colours
-            colour_match = False
-            while not colour_match:
-                if len(colours) == 0:
-                    colour_match = True
-                    available_tops = None
-                    available_bottoms = None
-                    break
+                # checks if there are tops available in the main colour
+                available_tops = self.fetch_colour_suitable_items(main_colour, tops)
+
+                # selects the colours that match with the main colour
+                query = "SELECT Matching_Colour FROM Colour_Combos WHERE Primary_Colour = ?"
+                self.c.execute(query, (main_colour,))
+                matching_colours = [row[0] for row in self.c.fetchall()]
+                random.shuffle(matching_colours)
+
+                if len(available_tops) != 0:
+                    # if there are tops in the main colour, check each matching colour to see if there are bottoms in a matching colour
+                    for colour in matching_colours:
+                        print("Checking match colour", colour)
+                        available_bottoms = self.fetch_colour_suitable_items(colour, bottoms)
+                        # if there are then a colour match has been made, the image creation function is called and the program breaks out of the loop
+                        if len(available_bottoms) != 0:
+                            colour_match = True
+                            break
                 else:
-                    # picks a random main colour
-                    main_colour = colours[random.randint(0, len(colours))]
-                    colours.remove(main_colour)
-
-                    # selects the colours that match with the main colour
-                    query = "SELECT Matching_Colour FROM Colour_Combos WHERE Primary_Colour = ?"
-                    self.c.execute(query, (main_colour,))
-                    matching_colours = [row[0] for row in self.c.fetchall()]
-                    random.shuffle(matching_colours)
-
-                    # checks if there are tops available in the main colour
-                    tops_query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour = ? AND Item_ID IN ({colour_tops_placeholders})"
-                    self.c.execute(tops_query, (main_colour, *tops))
-                    available_tops = [row[0] for row in self.c.fetchall()]
-
-                    if available_tops:
-                        # if there are tops in the main colour, check each matching colour to see if there are bottoms in a matching colour
+                    # checks if there are bottoms available in the main colour
+                    available_bottoms = self.fetch_colour_suitable_items(main_colour, bottoms)
+                    if len(available_bottoms) != 0:
+                        available_tops = ""
                         for colour in matching_colours:
-                            bottoms_query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour = ? AND Item_ID IN ({colour_bottoms_placeholders})"
-                            self.c.execute(bottoms_query, (colour, *bottoms))
-                            available_bottoms = [row[0] for row in self.c.fetchall()]
-                            # if there are then a colour match has been made and the program breaks out of the loop
-                            if available_bottoms:
+                            print("Checking match colour", colour)
+                            available_tops = self.fetch_colour_suitable_items(colour, tops)
+                            if len(available_tops) != 0:
                                 colour_match = True
                                 break
-                    else:
-                        bottoms_query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour = ? AND Item_ID IN ({colour_bottoms_placeholders})"
-                        self.c.execute(bottoms_query, (main_colour, *bottoms))
-                        available_bottoms = [row[0] for row in self.c.fetchall()]
 
-                        if available_bottoms:
-                            for colour in matching_colours:
-                                tops_query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour = ? AND Item_ID IN ({colour_tops_placeholders})"
-                                self.c.execute(tops_query, (colour, *tops))
-                                available_tops = [row[0] for row in self.c.fetchall()]
-                                if available_tops:
-                                    colour_match = True
-                                    break
+        if colour_match:
+            ids_to_be_compiled = [random.choice(available_tops), random.choice(available_bottoms)]
+            if outerwear_needed and len(outerwear) != 0:
+                ids_to_be_compiled.append(random.choice(outerwear))
+            else:
+                ids_to_be_compiled.append("None")
+            self.retrieve_selected_images(ids_to_be_compiled)
+            time.sleep(1)
+            self.compile_images(ids_to_be_compiled)
 
+    # fetches IDs from a passed in list that match the required colour
+    def fetch_colour_suitable_items(self, colour, item_list):
+        item_placeholder = ", ".join("?" * len(item_list))
+        query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour = ? AND Item_ID IN ({item_placeholder})"
+        self.c.execute(query, (colour, *item_list))
+        available_items = [row[0] for row in self.c.fetchall()]
+        print(available_items)
+        return available_items
 
+    # if an occasion was selected which requires more specific colours to be worn, this function is called
+    def occasion_filter_by_colour(self, clothing_ids, occasion_id, outerwear_needed, outerwear):
+        top_colours = self.get_unique_colours(clothing_ids[0])
+        bottom_colours = self.get_unique_colours(clothing_ids[1])
+        available_tops = ""
+        available_bottoms = ""
+
+        # selects matching colour combinations where both colours are also appropriate for the occasion
+        colour_combo_statement = """SELECT Primary_Colour, Matching_Colour FROM Colour_Combos
+                        JOIN Occasion_Colours ON Occasion_Colours.Appropriate_Colour = Colour_Combos.Primary_Colour
+                        WHERE Occasion_Colours.Occasion_ID = ?
+                            AND EXISTS (
+                                SELECT 1
+                                FROM Occasion_Colours Occasion_Colours2
+                                WHERE Occasion_Colours2.Occasion_ID = Occasion_Colours.Occasion_ID
+                                AND Occasion_Colours2.Appropriate_Colour = Colour_Combos.Matching_Colour
+                                );"""
+
+        self.c.execute(colour_combo_statement, (occasion_id,))
+        results = [record for record in self.c.fetchall()]
+        if results:
+            random.shuffle(results)
+            for match in results:
+                colour1 = match[0]
+                colour2 = match[1]
+                # checks if there are items that match the required colour combination
+                if colour1 in top_colours and colour2 in bottom_colours:
+                    available_tops = self.fetch_colour_suitable_items(colour1, clothing_ids[0])
+                    available_bottoms = self.fetch_colour_suitable_items(colour2, clothing_ids[1])
+                    break
+                elif colour2 in top_colours and colour1 in bottom_colours:
+                    available_tops = self.fetch_colour_suitable_items(colour2, clothing_ids[0])
+                    available_bottoms = self.fetch_colour_suitable_items(colour1, clothing_ids[1])
+                    break
+            if len(available_tops) != 0 and len(available_bottoms) != 0:
+                if outerwear_needed and len(outerwear) !=0:
+                    item_ids = [random.choice(available_tops), random.choice(available_bottoms),
+                                random.choice(outerwear)]
+                else:
+                    item_ids = [random.choice(available_tops), random.choice(available_bottoms), "None"]
+                self.retrieve_selected_images(item_ids)
+                time.sleep(1)
+                self.compile_images(item_ids)
+
+    # creates an outfit that fits occasion and temperature requirements, but not necessarily colour
+    def create_non_colour_coordinated_outfit(self, tops, bottoms, outerwear, outerwear_needed):
+        ids = [random.choice(tops), random.choice(bottoms)]
+        if outerwear_needed and len(outerwear) != 0:
+            ids.append(random.choice(outerwear))
         else:
-            top_colours = self.get_unique_colours(tops)
-            bottom_colours = self.get_unique_colours(bottoms)
-            onepiece_colours = self.get_unique_colours(onepieces)
+            ids.append("None")
+        self.retrieve_selected_images(ids)
+        time.sleep(1)
+        self.compile_images(ids)
 
-            colour_combo_statement = """SELECT Primary_Colour, Matching_Colour FROM Colour_Combos
-                            JOIN Occasion_Colours ON Occasion_Colours.Appropriate_Colour = Colour_Combos.Primary_Colour
-                            WHERE Occasion_Colours.Occasion_ID = ?
-                                AND EXISTS (
-                                    SELECT 1
-                                    FROM Occasion_Colours Occasion_Colours2
-                                    WHERE Occasion_Colours2.Occasion_ID = Occasion_Colours.Occasion_ID 
-                                    AND Occasion_Colours2.Appropriate_Colour = Colour_Combos.Matching_Colour
-                                    );"""
-
-            self.c.execute(colour_combo_statement, (occasion_id,))
-            results = [record for record in self.c.fetchall()]
-            if results:
-                random.shuffle(results)
-                for match in results:
-                    colour1 = match[0]
-                    colour2 = match[1]
-                    # checks if there are items that match the required colour combination
-                    if colour1 in top_colours and colour2 in bottom_colours:
-                        tops_query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour = ? AND Item_ID IN ({colour_tops_placeholders})"
-                        self.c.execute(tops_query, (colour1, *tops))
-                        available_tops = [row[0] for row in self.c.fetchall()]
-
-                        bottoms_query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour = ? AND Item_ID IN ({colour_bottoms_placeholders})"
-                        self.c.execute(tops_query, (colour2, *bottoms))
-                        available_bottoms = [row[0] for row in self.c.fetchall()]
-                        break
-                    elif colour2 in top_colours and colour1 in bottom_colours:
-                        tops_query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour = ? AND Item_ID IN ({colour_tops_placeholders})"
-                        self.c.execute(tops_query, (colour2, *tops))
-                        available_tops = [row[0] for row in self.c.fetchall()]
-
-                        bottoms_query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour = ? AND Item_ID IN ({colour_bottoms_placeholders})"
-                        self.c.execute(tops_query, (colour1, *bottoms))
-                        available_bottoms = [row[0] for row in self.c.fetchall()]
-                        break
-                    else:
-                        # checks if there are clothing items that are one piece items that match the colour combination required
-                        onepiece_query = f"SELECT Item_ID FROM Clothing_Items WHERE Primary_Colour IN (?, ?) AND Item_ID IN ({colour_onepieces_placeholders})"
-                        self.c.execute(colour_onepieces_placeholders,  (colour1, colour2, *onepieces))
-                        available_onepieces = [row[0] for row in self.c.fetchall()]
-
-
+    # fetches the list of unique colours of each of the clothing items passed in
     def get_unique_colours(self, clothing_items):
         colour_query = """SELECT Primary_Colour FROM Clothing_Items WHERE Item_ID = ?"""
         duplicate_colours = []
@@ -598,19 +605,33 @@ class GenerateMenu(tk.Frame):
 
     # returns the images of the items that were chosen to be in the outfit
     def retrieve_selected_images(self, item_ids):
+        print(item_ids)
+        # checks for existing images and deleting them before adding a new image
+        for file in os.listdir("temp-item-images"):
+            file_path = os.path.join("temp-item-images", file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        print("deleted images in temp-item-images")
         image_query = """SELECT Clothing_Image FROM Clothing_Items WHERE Item_ID = ?"""
-        num = 0
         # fetches each of the BLOBs for the item_IDs and saves them to a temporary folder
-        for item in item_ids:
-            num += 1
-            self.c.execute(image_query, (item,))
-            response = self.c.fetchall()
-            blob_img = response[0][0]
-            img = Image.open(io.BytesIO(blob_img))
-            img.save("C:/Users/jasmi/PycharmProjects/OutfitGenie/temp-item-images/item" + str(num) + ".png")
+        for num, item in enumerate(item_ids):
+            if item != "None":
+                print(item)
+                self.c.execute(image_query, (item,))
+                response = self.c.fetchall()
+                blob_img = response[0][0]
+                img = Image.open(io.BytesIO(blob_img))
+                img.save("C:/Users/jasmi/PycharmProjects/OutfitGenie/temp-item-images/item" + str(num) + ".png")
+        print("saved new images")
 
     # item IDs have to be passed in the order: top, bottoms, outerwear
     def compile_images(self, item_ids):
+        # checks for existing images and deleting them before adding a new image
+        for file in os.listdir("temp-outfit-images"):
+            file_path = os.path.join("temp-outfit-images", file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        print("deleted images in temp-outfit-images")
         item_x_coords = [35, 35,
                          250]  # x coordinates for where the top left corner of the image will be (different for each item)
         item_y_coords = [5, 280, 40]  # the same but for the y coordinates
@@ -620,9 +641,17 @@ class GenerateMenu(tk.Frame):
 
         # loops through the items and places them on the white background according to the coordinates above
         for i in range(num_items):
-            overlay_image = self.resize_image("item" + str(i) + ".png")
-            resized_bg.paste(overlay_image, (item_x_coords[i], item_y_coords[i]), overlay_image)
-            resized_bg.save("C:/Users/jasmi/PycharmProjects/OutfitGenie/temp-outfit-images/newoutfit")
+            if item_ids[i] != "None":
+                overlay_image = self.resize_image("temp-item-images/item" + str(i) + ".png")
+                resized_bg.paste(overlay_image, (item_x_coords[i], item_y_coords[i]), overlay_image)
+                resized_bg.save("temp-outfit-images/newoutfit.png")
+
+        # opens the window for the user to save the generated outfit
+        if self.outfit_confirmation_window is not None:
+            self.outfit_confirmation_window.destroy()
+            self.outfit_confirmation()
+        else:
+            self.outfit_confirmation()
 
     # resizes the image to fit the background according to its original aspect ratio
     def resize_image(self, image_path):
@@ -634,5 +663,66 @@ class GenerateMenu(tk.Frame):
 
         return resized_overlay
 
-# notes for working on this tomorrow: need to clear the temp-outfit and temp-item folder before generating new item
-# also save the outfit to the database and to the outfit-images folder so it displays on the homescreen
+    # creates a window for the user to decide if they want to keep the generated outfit or not
+    def outfit_confirmation(self):
+        self.outfit_confirmation_window = tk.Toplevel()
+        self.outfit_confirmation_window.withdraw()
+        self.outfit_confirmation_window.title("Save Outfit")
+        self.outfit_confirmation_window.config(bg="#dcf5df")
+        cw.centrewin(self.outfit_confirmation_window, 600, 800)
+
+        # creating frames to contain the widgets in the window
+        headingFrame = tk.Frame(self.outfit_confirmation_window, bg="#dcf5df")
+        imageFrame = tk.Frame(self.outfit_confirmation_window, bg="#dcf5df")
+        buttonsFrame = tk.Frame(self.outfit_confirmation_window, bg="#dcf5df")
+
+        # creating a heading instructing the user on the purpose of the window
+        headingLabel = tk.Label(headingFrame, text="Save Outfit?", font=("Montserrat ExtraBold", 20), bg="#dcf5df", fg="#969696")
+        headingLabel.pack()
+
+        # creating the image of the outfit to be displayed to the user
+        temp_image = Image.open(self.newoutfit_path)
+        self.generatedOutfit = ImageTk.PhotoImage(temp_image)
+        imageLabel = tk.Label(imageFrame, image=self.generatedOutfit, bg="#dcf5df")
+        imageLabel.pack()
+
+        # creating the buttons so the user can decide if they want to keep the outfit
+        self.deleteButtonImg = tk.PhotoImage(file="app-images/DeleteButton.png")
+        deleteButton = tk.Button(buttonsFrame, background="#dcf5df", borderwidth=0, command=self.outfit_confirmation_window.withdraw)
+        deleteButton.config(image=self.deleteButtonImg)
+
+        self.confirmButtonImg = tk.PhotoImage(file="app-images/ConfirmButton.png")
+        confirmButton = tk.Button(buttonsFrame, background="#dcf5df", borderwidth=0, command=self.save_outfit)
+        confirmButton.config(image=self.confirmButtonImg)
+
+        deleteButton.pack(side="left", padx=(0, 30))
+        confirmButton.pack(side="right", padx=(0, 30))
+
+        headingFrame.pack()
+        imageFrame.pack()
+        buttonsFrame.pack()
+
+        self.outfit_confirmation_window.deiconify()
+
+    # saves the outfit information to the database and displays a temporary success message
+    def save_outfit(self):
+        # saving to table User_Outfits
+        outfit_num_object = uuid.uuid4()
+        outfit_num = str(outfit_num_object)
+        user_id = self.get_user_id()
+        now = datetime.now()
+        date_created = now.strftime("%Y-%m-%d %H:%M:%S")
+        with open(self.newoutfit_path, "rb") as f:
+            blobData = f.read()
+        insertion_query = """INSERT INTO User_Outfits (Outfit_ID, User_ID, Date_Created, Outfit_Image) VALUES (?,?,?,?)"""
+        self.c.execute(insertion_query, (outfit_num, user_id, date_created, blobData))
+
+        # saving to table Outfit_Occasions
+        occasion = self.occasion.get()
+        occasion_id = self.retrieve_occasion_id(occasion)
+        occasion_insert = """INSERT INTO Outfit_Occasions (Outfit_ID, Occasion_ID) VALUES (?,?)"""
+        self.c.execute(occasion_insert, (outfit_num, occasion_id))
+        self.conn.commit()
+
+        self.outfit_confirmation_window.destroy()
+        self.successMessageFrame.place(x=0, y=770, relwidth=1)

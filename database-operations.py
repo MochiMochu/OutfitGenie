@@ -1,6 +1,7 @@
 import sqlite3
 from sqlite3 import Error
 from datetime import datetime
+import uuid
 
 #
 # statement = """ALTER TABLE Clothing_Items
@@ -129,27 +130,27 @@ from datetime import datetime
 #     connection.commit()
 #
 #
-# # populates the occasion colours table with the colours that are suitable for certain occasions
-def populate_occasion_colours(connection):
-    c = connection.cursor()
-    # friend meetup, family event, festive party, religious event and house party not listed here because any colour is suitable
-    work_function_colours = [("WF", "black"), ("WF", "green"), ("WF", "light green"), ("WF", "purple"), ("WF", "pink"), ("WF", "brown"),
-                             ("WF", "grey"), ("WF", "white"), ("WF", "beige"), ("WF", "navy"), ("WF", "khaki"), ("WF", "light blue"), ("WF", "dark blue")]
-    c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", work_function_colours)
-
-    job_interview_colours = [("JI", "black"), ("JI", "grey"), ("JI", "navy"), ("JI", "white"), ("JI", "beige"), ("JI", "brown")]
-    c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", job_interview_colours)
-
-    black_tie_affair_colours = [("BTA", "black")]
-    c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", black_tie_affair_colours)
-
-    wedding_colours = [("W", "red"), ("W", "green"), ("W", "light green"), ("W", "purple"), ("W", "yellow"), ("W", "orange"),
-                       ("W", "pink"), ("W", "brown"), ("W", "navy"), ("W", "light blue"), ("W", "dark blue")]
-    c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", wedding_colours)
-
-    funeral_colours = [("F", "black"), ("F", "grey"), ("F", "navy")]
-    c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", funeral_colours)
-    connection.commit()
+# # # populates the occasion colours table with the colours that are suitable for certain occasions
+# def populate_occasion_colours(connection):
+#     c = connection.cursor()
+#     # friend meetup, family event, festive party, religious event and house party not listed here because any colour is suitable
+#     work_function_colours = [("WF", "black"), ("WF", "green"), ("WF", "light green"), ("WF", "purple"), ("WF", "pink"), ("WF", "brown"),
+#                              ("WF", "grey"), ("WF", "white"), ("WF", "beige"), ("WF", "navy"), ("WF", "khaki"), ("WF", "light blue"), ("WF", "dark blue")]
+#     c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", work_function_colours)
+#
+#     job_interview_colours = [("JI", "black"), ("JI", "grey"), ("JI", "navy"), ("JI", "white"), ("JI", "beige"), ("JI", "brown")]
+#     c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", job_interview_colours)
+#
+#     black_tie_affair_colours = [("BTA", "black")]
+#     c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", black_tie_affair_colours)
+#
+#     wedding_colours = [("W", "red"), ("W", "green"), ("W", "light green"), ("W", "purple"), ("W", "yellow"), ("W", "orange"),
+#                        ("W", "pink"), ("W", "brown"), ("W", "navy"), ("W", "light blue"), ("W", "dark blue")]
+#     c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", wedding_colours)
+#
+#     funeral_colours = [("F", "black"), ("F", "grey"), ("F", "navy")]
+#     c.executemany("INSERT INTO Occasion_Colours VALUES (?,?)", funeral_colours)
+#     connection.commit()
 
 # def test_occasion_colours(connection, occasion):
 #     c = connection.cursor()
@@ -166,6 +167,178 @@ def populate_occasion_colours(connection):
 #     results = c.fetchall()
 #     print(results)
 
+def create_clothing_categories(connection):
+    c = connection.cursor()
+    statement = """CREATE TABLE IF NOT EXISTS Clothing_Categories (
+                    Category text NOT NULL,
+                    Specific_Type text NOT NULL,
+                    FOREIGN KEY (Specific_Type) REFERENCES Clothing_Items(Clothing_Type),
+                    PRIMARY KEY (Category, Specific_Type)
+                    );"""
+    try:
+        c.execute(statement)
+    except Error as e:
+        print(e)
+    finally:
+        connection.commit()
+
+def populate_clothing_categories(connection):
+    c = connection.cursor()
+    tops_types = [("Tops", "t shirt"), ("Tops", "graphic tee"), ("Tops", "polo shirt"), ("Tops", "corset"), ("Tops", "off shoulder top"), ("Tops", "bodysuit"), ("Tops", "camisole"),
+                       ("Tops", "crop top"), ("Tops", "tube top"), ("Tops", "tank top"), ("Tops", "formal shirt"), ("Tops", "blouse")]
+    c.executemany("INSERT INTO Clothing_Categories VALUES (?,?)", tops_types)
+
+    dress_types = [("Dress", "mini dress"), ("Dress", "midi skirt"), ("Dress", "maxi skirt"), ("Dress", "bodycon dress")]
+    c.executemany("INSERT INTO Clothing_Categories VALUES (?,?)", dress_types)
+
+    hoodies_types = [("Hoodies & Sweatshirts", "sweatshirt"), ("Hoodies & Sweatshirts", "hoodie")]
+    c.executemany("INSERT INTO Clothing_Categories VALUES (?,?)", hoodies_types)
+
+    cardigans_types = [("Cardigans & Jumpers", "turtleneck"), ("Cardigans & Jumpers", "jumper"), ("Cardigans & Jumpers", "cardigan")]
+    c.executemany("INSERT INTO Clothing_Categories VALUES (?,?)", cardigans_types)
+
+    jackets_types = [("Jackets & Coats", "jacket"), ("Jackets & Coats", "blazer"), ("Jackets & Coats", "gilet"), ("Jackets & Coats", "fur coat"), ("Jackets & Coats", "puffer coat"),
+                     ("Jackets & Coats", "parka"), ("Jackets & Coats", "trench coat")]
+    c.executemany("INSERT INTO Clothing_Categories VALUES (?,?)", jackets_types)
+
+    trousers_types = [("Trousers", "joggers"), ("Trousers", "jeans"), ("Trousers", "cargo pants"), ("Trousers", "flares"), ("Trousers", "leggings"), ("Trousers", "slacks"),
+                      ("Trousers", "suit pants")]
+    c.executemany("INSERT INTO Clothing_Categories VALUES (?,?)", trousers_types)
+
+    skirts_types = [("Skirts", "mini skirt"), ("Skirts", "midi skirt"), ("Skirts", "maxi skirt")]
+    c.executemany("INSERT INTO Clothing_Categories VALUES (?,?)", skirts_types)
+
+    shorts_types = [("Shorts", "hot pants"), ("Shorts", "bermuda shorts"), ("Shorts", "shorts")]
+    c.executemany("INSERT INTO Clothing_Categories VALUES (?,?)", shorts_types)
+
+    jumpsuits_types = [("Jumpsuits & Overalls", "dungarees"), ("Jumpsuits & Overalls", "jumpsuit"), ("Jumpsuits & Overalls", "overalls")]
+    c.executemany("INSERT INTO Clothing_Categories VALUES (?,?)", jumpsuits_types)
+    connection.commit()
+
+def create_broader_colours(connection):
+    c = connection.cursor()
+    statement = """CREATE TABLE IF NOT EXISTS Broader_Colours(
+                    General_Colour text NOT NULL,
+                    Specific_Colour text NOT NULL,
+                    FOREIGN KEY (Specific_Colour) REFERENCES Clothing_Items(Primary_Colour),
+                    PRIMARY KEY (General_Colour, Specific_Colour)
+                    );"""
+    try:
+        c.execute(statement)
+    except Error as e:
+        print(e)
+    finally:
+        connection.commit()
+
+def populate_broader_colours(connection):
+    c = connection.cursor()
+    colour_pairings = [("Beige", "beige"), ("Grey", "grey"), ("Brown", "brown"), ("Brown", "khaki"), ("Blue", "navy"), ("Blue", "denim"), ("Blue", "light blue"),
+                       ("Blue", "dark blue"), ("Green", "light green"), ("Green", "green"), ("Red", "red"), ("Orange", "orange"), ("Pink", "pink"), ("Yellow", "yellow"),
+                       ("Purple", "purple"), ("White", "white")]
+    c.executemany("INSERT INTO Broader_Colours VALUES (?,?)", colour_pairings)
+    connection.commit()
+    connection.close()
+
+def create_broader_occasions(connection):
+    c = connection.cursor()
+    statement = """CREATE TABLE IF NOT EXISTS Broader_Occasions(
+                    General_Occasion text NOT NULL,
+                    Specific_Occasion text NOT NULL,
+                    FOREIGN KEY (Specific_Occasion) REFERENCES Items_Occasions(Occasion_ID),
+                    PRIMARY KEY (General_Occasion, Specific_Occasion)
+                    );"""
+    try:
+        c.execute(statement)
+    except Error as e:
+        print(e)
+    finally:
+        connection.commit()
+        connection.close()
+
+
+def populate_broader_occasions(connection):
+    c = connection.cursor()
+    occasion_pairings = [("Casual", "FM"), ("Casual", "FE"), ("Formal", "BTA"), ("Formal", "RE"), ("Formal", "W"), ("Formal", "F"),
+                         ("Office Wear", "WF"), ("Office Wear", "JI"), ("Party", "HP"), ("Party", "FP")]
+    try:
+        c.executemany("INSERT INTO Broader_Occasions VALUES (?,?)", occasion_pairings)
+    except Error as e:
+        print(e)
+    finally:
+        connection.commit()
+        connection.close()
+
+
+def create_clothing_levels(connection):
+    c = connection.cursor()
+    statement = """CREATE TABLE IF NOT EXISTS Clothing_Levels (
+                    Level text NOT NULL,
+                    Clothing_Type text NOT NULL,
+                    PRIMARY KEY (Level, Clothing_Type)
+                    );"""
+    try:
+        c.execute(statement)
+    except Error as e:
+        print(e)
+    finally:
+        connection.commit()
+        connection.close()
+
+
+def populate_clothing_levels(connection):
+    c = connection.cursor()
+    levels_dictionary = {"t-shirt": "top",
+                         "graphic tee": "top",
+                         "polo shirt": "top",
+                         "corset": "top",
+                         "off the shoulder top": "top",
+                         "bodysuit": "top",
+                         "camisole": "top",
+                         "crop top": "top",
+                         "tube top": "top",
+                         "tank top": "top",
+                         "formal shirt": "top",
+                         "blouse": "top",
+                         "turtleneck": "top",
+                         "jumper": "outerwear",
+                         "cardigan": "outerwear",
+                         "sweatshirt": "outerwear",
+                         "hoodie": "outerwear",
+                         "joggers": "bottom",
+                         "jeans": "bottom",
+                         "cargo pants": "bottom",
+                         "flares": "bottom",
+                         "leggings": "bottom",
+                         "slacks": "bottom",
+                         "suit pants": "bottom",
+                         "hot pants": "bottom",
+                         "bermuda shorts": "bottom",
+                         "shorts": "bottom",
+                         "mini skirt": "bottom",
+                         "midi skirt": "bottom",
+                         "maxi skirt": "bottom",
+                         "mini dress": "onepiece",
+                         "midi dress": "onepiece",
+                         "maxi dress": "onepiece",
+                         "bodycon dress": "onepiece",
+                         "dungarees": "onepiece",
+                         "jumpsuit": "onepiece",
+                         "overalls": "onepiece",
+                         "blazer": "outerwear",
+                         "gilet": "outerwear",
+                         "fur coat": "outerwear",
+                         "puffer coat": "outerwear",
+                         "jacket": "outerwear",
+                         "parka": "outerwear",
+                         "trench coat": "outerwear"
+                         }
+    for key, value in levels_dictionary.items():
+        try:
+            c.execute("INSERT INTO Clothing_Levels VALUES (?,?)", (value, key))
+        except Error as e:
+            print(e)
+    connection.commit()
+    connection.close()
 
 if __name__ == "__main__":
     conn = sqlite3.connect("OutfitGenieInfo.db")
@@ -175,10 +348,18 @@ if __name__ == "__main__":
     # populate_occasion_colours(conn)
     # occasion = "BTA"
     # test_occasion_colours(conn, occasion)
+    # populate_clothing_categories(conn)
+    # create_broader_colours(conn)
+    # populate_broader_colours(conn)
+    # create_broader_occasions(conn)
+    # populate_broader_occasions(conn)
     c = conn.cursor()
-    c.execute("DROP TABLE Occasions_Suitable_Colours")
+    c.execute("DELETE FROM Clothing_Items WHERE User_ID = '00229ff1-50cb-4636-a9a7-9ff18a8013de' AND Item_ID = 'LRM0001'")
     conn.commit()
     conn.close()
+
+    # create_clothing_levels(conn)
+    # populate_clothing_levels(conn)
 
     # try:
     #     conn.execute('BEGIN TRANSACTION')

@@ -7,12 +7,12 @@ import tkinter.font as tkfont
 import sqlite3
 from datetime import datetime
 import os
+import uuid
 
 
 class Popup(tk.Frame):
     def __init__(self, parent, path, *args, **kwargs):
-        ttk.Frame.__init__(self, parent, *args, **kwargs)
-        super().__init__()
+        tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.file_path = path
         self.output_path = "C:/Users/jasmi/PycharmProjects/OutfitGenie/temp-upload-image/item_rembg.png"
@@ -57,7 +57,7 @@ class Popup(tk.Frame):
         # variables containing values to fill the comboboxes
         self.all_items_types = self.get_item_types()
         self.all_colours = self.get_colours()
-        self.all_fits = ["oversized", "baggy", "skinny", "fitted", "regular", "relaxed", "muscle fit"]
+        self.all_fits = ["oversized", "skinny", "fitted", "regular", "relaxed", "muscle fit"]
         self.all_occasions = self.get_occasions()
         self.all_warmth = ["thin", "medium", "thick"]
 
@@ -97,7 +97,7 @@ class Popup(tk.Frame):
     # gets the list of all item types from the text file
     def get_item_types(self):
         types = []
-        with open("C:/Users/jasmi/PycharmProjects/OutfitGenie/app-text-files/clothingTypes.txt", "r") as f:
+        with open("app-text-files/clothing_types.txt", "r") as f:
             lines = f.readlines()
             for line in lines:
                 types.append(line.strip())
@@ -107,7 +107,7 @@ class Popup(tk.Frame):
     # gets the list of all colours from the respective text file
     def get_colours(self):
         colours = []
-        with open("C:/Users/jasmi/PycharmProjects/OutfitGenie/app-text-files/clothing_colours.txt", "r") as f:
+        with open("app-text-files/clothing_colours.txt", "r") as f:
             lines = f.readlines()
             for line in lines:
                 colours.append(line.strip())
@@ -194,25 +194,16 @@ class Popup(tk.Frame):
 
         return selected_occasions
 
-    # get the numerical half of the item ID
-    def get_num_id(self, code):
+    # create a new item id
+    def get_num_id(self):
+        obj = uuid.uuid4()
+        return str(obj)
+
+    # get id of user
+    def get_user_id(self):
         with open("app-text-files/current_user.txt") as f:
             user_id = f.readline()
-        query = """SELECT Item_ID from Clothing_items WHERE User_ID = ? AND Item_ID LIKE ?"""
-        self.c.execute(query, (user_id, code+"%"))
-        response = self.c.fetchall()
-        all_ids = []
-        for value in response:
-            for num in value:
-                all_ids.append(num)
-        if all_ids:
-            last_id = all_ids[len(all_ids)-1]
-            last_id_num = last_id[-4:]
-            new_id_num = int(last_id_num) + 1
-        else:
-            last_id_num = "0000"
-            new_id_num = 1
-        return new_id_num, last_id_num, user_id
+        return user_id
 
     # creates all the widgets in the window
     def create_widgets(self):
@@ -314,14 +305,14 @@ class Popup(tk.Frame):
         self.occasionWidgets.pack()
 
         # creates the two buttons for either saving the new item or cancelling the process
-        self.saveButtonImage = tk.PhotoImage(file="C:/Users/jasmi/PycharmProjects/OutfitGenie/app-images/SaveButton.png")
+        self.saveButtonImage = tk.PhotoImage(file="app-images/SaveButton.png")
         self.saveButton = tk.Button(self.window,
                                      background="#dabfde",
                                      borderwidth=0,
                                      command=self.save_to_db)
         self.saveButton.config(image=self.saveButtonImage)
         self.saveButton.pack(pady=(10, 0))
-        self.cancelButtonImage = tk.PhotoImage(file="C:/Users/jasmi/PycharmProjects/OutfitGenie/app-images/CancelButton.png")
+        self.cancelButtonImage = tk.PhotoImage(file="app-images/CancelButton.png")
         self.cancelButton = tk.Button(self.window,
                                        background="#dabfde",
                                        borderwidth=0,
@@ -337,43 +328,46 @@ class Popup(tk.Frame):
         self.errorMessage.pack()
 
     def save_to_db(self):
+        self.errorMessageFrame.place_forget()
         type = self.type_input.get()
         colour = self.colour_input.get()
         fit = self.fit_input.get()
         warmth = self.warmth_input.get()
-        occasions_check = False
-        all_occasion_inputs = []
-        for variable in self.occasion_variables:
-            value = variable.get()
-            all_occasion_inputs.append(value)
-            if value == 1:
-                occasions_check = True
-        if type == "" or colour == "" or fit == "" or warmth == "" or not occasions_check:
+        if type not in self.all_items_types or colour not in self.all_colours or fit not in self.all_fits or warmth not in self.all_warmth:
             self.errorMessageFrame.place(x=0, y=0, relwidth=1)
         else:
-            self.errorMessageFrame.place_forget()
-            image_to_upload = self.convert_blob(self.output_path)
-            selected_occasions = self.map_occasions(all_occasion_inputs)
-            now = datetime.now()
-            now_str = now.strftime("%Y-%m-%d %H:%M:%S")
-            item_code = colour[0].upper() + fit[0].upper() + type[0].upper()
-            new_num, old_num, user_id = self.get_num_id(item_code)
-            new_id = item_code + str(new_num).zfill(len(old_num))
-            new_item_query = """INSERT INTO Clothing_Items (Item_ID, User_ID, clothingType, Primary_Colour, Clothing_Fit, Clothing_Thickness, Clothing_Image, Date_Created)
-                                VALUES (?,?,?,?,?,?,?,?)"""
-            self.c.execute(new_item_query, (new_id, user_id, type, colour, fit, warmth, image_to_upload, now_str))
+            occasions_check = False
+            all_occasion_inputs = []
+            for variable in self.occasion_variables:
+                value = variable.get()
+                all_occasion_inputs.append(value)
+                if value == 1:
+                    occasions_check = True
+            if type == "" or colour == "" or fit == "" or warmth == "" or not occasions_check:
+                self.errorMessageFrame.place(x=0, y=0, relwidth=1)
+            else:
+                self.errorMessageFrame.place_forget()
+                image_to_upload = self.convert_blob(self.output_path)
+                selected_occasions = self.map_occasions(all_occasion_inputs)
+                now = datetime.now()
+                now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+                new_id = self.get_num_id()
+                user_id = self.get_user_id()
+                new_item_query = """INSERT INTO Clothing_Items (Item_ID, User_ID, Clothing_Type, Primary_Colour, Clothing_Fit, Clothing_Thickness, Clothing_Image, Date_Created)
+                                    VALUES (?,?,?,?,?,?,?,?)"""
+                self.c.execute(new_item_query, (new_id, user_id, type, colour, fit, warmth, image_to_upload, now_str))
 
-            occasion_id_query = """SELECT Occasion_ID FROM Occasions WHERE Occasion_Name = ?"""
-            occasion_item_add = """INSERT INTO Items_Occasions VALUES (?,?)"""
-            for occasion in selected_occasions:
-                self.c.execute(occasion_id_query, (occasion,))
-                response = self.c.fetchall()
-                occasion_name = response[0][0]
-                self.c.execute(occasion_item_add, (new_id, occasion_name))
-            self.conn.commit()
-            self.conn.close()
-            self.window.withdraw()
-            os.remove(self.output_path)
+                occasion_id_query = """SELECT Occasion_ID FROM Occasions WHERE Occasion_Name = ?"""
+                occasion_item_add = """INSERT INTO Clothing_Occasions VALUES (?,?)"""
+                for occasion in selected_occasions:
+                    self.c.execute(occasion_id_query, (occasion,))
+                    response = self.c.fetchall()
+                    occasion_name = response[0][0]
+                    self.c.execute(occasion_item_add, (new_id, occasion_name))
+                self.conn.commit()
+                self.conn.close()
+                self.window.withdraw()
+                os.remove(self.output_path)
 
 
 

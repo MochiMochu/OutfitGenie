@@ -1,0 +1,31 @@
+
+Clothing Type
+Tops
+Dresses
+Hoodies & Sweatshirts
+Cardigans & Jumpers
+Jackets & Coats
+Trousers
+Skirts
+Shorts
+Jumpsuits & Overalls
+
+Colour
+Black
+Beige
+Grey
+Brown
+Blue
+Green
+Red
+Orange
+Yellow
+Purple
+Pink
+White
+
+Occasion
+Casual
+Formal
+Office Wear
+Party

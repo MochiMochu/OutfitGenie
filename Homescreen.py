@@ -1,12 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
-from PIL import ImageTk, Image, ImageChops
+from PIL import ImageTk, Image
 import sqlite3
 import shutil
 import os
 import requests
-import json
-from datetime import datetime
 from io import BytesIO
 import MenuHeader as header
 import CentreWindow as cw
@@ -14,7 +12,7 @@ import CentreWindow as cw
 
 class HomeScreen(tk.Frame):
     def __init__(self, parent, open_home, open_generate, open_wardrobe, open_settings, close_app, *args, **kwargs):
-        ttk.Frame.__init__(self, parent, *args, **kwargs)
+        tk.Frame.__init__(self, parent, *args, **kwargs)
         super().__init__()
         self.parent = parent
         self.window = None
@@ -55,6 +53,7 @@ class HomeScreen(tk.Frame):
         self.maxTemp = None
         self.minTemp = None
         self.realFeel = None
+        self.weatherFetchError = None
 
         # initiating variables for holding weather information from the API call
         self.place = None
@@ -63,7 +62,10 @@ class HomeScreen(tk.Frame):
         self.weather_desc = None
         self.high_temp = None
         self.low_temp = None
-        self.feels_ike = None
+        self.feels_like = None
+
+        # variable for holding all images in use
+        self.outfit_images = []
 
         # starts this window so that it is placed on the topmost level of all the other windows
     def start(self):
@@ -128,27 +130,33 @@ class HomeScreen(tk.Frame):
         if self.outfitsAvailable != 0:
             for i in range(self.outfitsAvailable):
                 self.temp_image = tk.PhotoImage(
-                    file="C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/outfit" + str(i + 1) + ".png")
+                    file="outfit-images/cropped-outfit-images/outfit" + str(i) + ".png")
+                self.outfit_images.append(self.temp_image)
                 if self.temp_image:
                     self.carouselButton = tk.Button(self.buttonsCont,
                                                     image=self.temp_image,
-                                                    width=150,
+                                                    width=192,
                                                     height=250,
                                                     bd=0,
                                                     relief="flat",
                                                     command=self.close_and_open_generate)
                     self.carouselButton.pack(side="left")
                 else:
-                    print("image not loaded")
-
-        # calling function to gather weather forecast information
-        self.place, self.icon, self.current_temp, self.weather_desc, self.high_temp, self.low_temp, self.feels_like = self.display_weather()
+                    self.display_empty()
 
         # frames for weather forecast widget
         self.weatherCont = tk.Frame(self.window, width=100, height=360, background="#e0f7ff")
         self.weatherHeaderFrame = tk.Frame(self.weatherCont, width=300, height=120, background="#e0f7ff")
         self.weatherIconFrame = tk.Frame(self.weatherCont, width=300, height=120, background="#e0f7ff")
         self.weatherTempFrame = tk.Frame(self.weatherCont, width=300, height=120, background="#e0f7ff")
+
+        self.weatherFetchError = tk.Label(self.weatherCont,
+                                          text="Weather information unavailable at this time.",
+                                          font=("Montserrat", 11),
+                                          foreground="#5a6275",
+                                          background="#e0f7ff")
+
+        self.place, self.icon, self.current_temp, self.weather_desc, self.high_temp, self.low_temp, self.feels_like = self.display_weather()
 
         # widgets for displaying weather forecast
         self.weatherHeader = tk.Label(self.weatherHeaderFrame,
@@ -201,38 +209,26 @@ class HomeScreen(tk.Frame):
         self.scrollbar.pack(side="bottom", fill="x")
         self.carouselCanvas.pack(side="left", fill="both", expand=True)
 
-        # pack widgets for displaying weather
-        self.weatherHeader.pack(side=tk.LEFT)
-        self.locationHeader.pack(side=tk.LEFT)
-        # widgets in the header of the forecast
-        self.weatherLabel.place(x=20, y=20)
-        self.displayTemp.place(x=120, y=20)
-        self.weatherSummary.place(x=120, y=55)
-        # icon, temperature and general description of weather for the day
-        self.maxTemp.place(x=20, y=10)
-        self.minTemp.place(x=160, y=10)
-        self.realFeel.place(x=50, y=55)
-        # min and max temperature and what it feels like
-        self.weatherCont.pack(side="left", padx=(10, 0))
-        self.weatherHeaderFrame.pack()
-        self.weatherIconFrame.pack(side=tk.TOP)
-        self.weatherTempFrame.pack()
-
-    # manages and clears the directories before loading any outfit images
-    def clear_directories(self):
-        # clearing previously added images of outfits
-        directory_path = "C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/"
-
-        # List all files and subdirectories in the directory
-        contents = os.listdir(directory_path)
-
-        # Remove each item within the directory
-        for item in contents:
-            item_path = os.path.join(directory_path, item)
-            if os.path.isfile(item_path):
-                os.remove(item_path)  # Remove files
-            elif os.path.isdir(item_path):
-                shutil.rmtree(item_path)  # Remove subdirectories and their contents
+        if not self.place:
+            self.weatherFetchError.pack()
+            self.weatherCont.pack(padx=(10, 0))
+        else:
+            # pack widgets for displaying weather
+            self.weatherHeader.pack(side=tk.LEFT)
+            self.locationHeader.pack(side=tk.LEFT)
+            # widgets in the header of the forecast
+            self.weatherLabel.place(x=20, y=20)
+            self.displayTemp.place(x=120, y=20)
+            self.weatherSummary.place(x=120, y=55)
+            # icon, temperature and general description of weather for the day
+            self.maxTemp.place(x=20, y=10)
+            self.minTemp.place(x=160, y=10)
+            self.realFeel.place(x=50, y=55)
+            # min and max temperature and what it feels like
+            self.weatherCont.pack(padx=(10, 0), pady=(15,0))
+            self.weatherHeaderFrame.pack()
+            self.weatherIconFrame.pack(side=tk.TOP)
+            self.weatherTempFrame.pack()
 
     # get id of user to load any saved outfits
     def get_user_id(self):
@@ -243,7 +239,7 @@ class HomeScreen(tk.Frame):
     # function to get latitude of user's location
     def get_latitude(self):
         user_id = self.get_user_id()
-        lat_query = """SELECT Latitude from Users WHERE User_ID = ?"""
+        lat_query = """SELECT Latitude FROM Users WHERE User_ID = ?"""
         self.c.execute(lat_query, (user_id,))
         result = self.c.fetchall()
         latitude = []
@@ -255,7 +251,7 @@ class HomeScreen(tk.Frame):
     # function to get longitude of user's location
     def get_longitude(self):
         user_id = self.get_user_id()
-        lng_query = """SELECT Longitude from Users WHERE User_ID = ?"""
+        lng_query = """SELECT Longitude FROM Users WHERE User_ID = ?"""
         self.c.execute(lng_query, (user_id,))
         result = self.c.fetchall()
         longitude = []
@@ -264,52 +260,51 @@ class HomeScreen(tk.Frame):
                 longitude.append(value)
         return longitude
 
-    # check if any outfits exist
+    # check if any outfits exist and cap the number that can be displayed to 5
     def check_outfits(self):
         user_id = self.get_user_id()
-        select_query = "SELECT Outfit_ID from User_Outfits WHERE User_ID = ?"
+        select_query = "SELECT Outfit_ID FROM User_Outfits WHERE User_ID = ?"
         self.c.execute(select_query, (user_id,))
-        answer = self.c.fetchall()
-        items = len(answer)
-        login_details = []
-        for item in answer:
-            for value in item:
-                login_details.append(value)
-        if items == 0:
+        items = [row[0] for row in self.c.fetchall()]
+        num_items = len(items)
+        if len(items) == 0:
             self.display_empty()
-        return items
+        elif len(items) >5:
+            num_items = 5
+        return num_items
 
     # loads images of the outfits from the database
     def load_images(self):
         user_id = self.get_user_id()  # fetches user id from current user file
-        fetch_image_query = """SELECT Outfit_Image from User_Outfits where user_id = ? LIMIT ?"""
+        fetch_image_query = """SELECT Outfit_Image FROM User_Outfits WHERE User_ID = ? LIMIT ?"""
         self.c.execute(fetch_image_query, (user_id, self.outfitsAvailable))
         record = self.c.fetchall()
+        for file in os.listdir("outfit-images"):
+            file_path = os.path.join("outfit-images", file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
         for index, row in enumerate(record):
-            photoPath = "C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/outfit{}.png".format(index)
-            with open(photoPath, 'wb') as file:
+            photo_path = "outfit-images/outfit{}.png".format(index)
+            with open(photo_path, 'wb') as file:
                 file.write(row[0])  # Access the first element of the tuple (the image data)
 
     # calls function to crop image for every item in the directory
     def organise_images(self):
         num = self.outfitsAvailable
+        for file in os.listdir("outfit-images/cropped-outfit-images"):
+            file_path = os.path.join("outfit-images/cropped-outfit-images", file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
         for i in range(num):
             image = Image.open("C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/outfit" + str(i) + ".png")
             newimage = self.crop_image(image)
-            savedimage = newimage.save(
-                "C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/outfit" + str(i + 1) + ".png")
-            os.remove("C:/Users/jasmi/PycharmProjects/OutfitGenie/outfit-images/outfit" + str(i) + ".png")
+            savedimage = newimage.save("outfit-images/cropped-outfit-images/outfit" + str(i) + ".png")
+            os.remove("outfit-images/outfit" + str(i) + ".png")
 
     # crops the image around the objects and resizes to fit inside the buttons
     def crop_image(self, image):
-        bg = Image.new(image.mode, image.size, image.getpixel((0, 0)))
-        diff = ImageChops.difference(image, bg)
-        diff = ImageChops.add(diff, diff, 2.0, -100)
-        bbox = diff.getbbox()
-        if bbox:
-            cropped = image.crop(bbox)
-            resized = cropped.resize((150, 250))
-            return resized
+        resized_image = image.resize((192, 250))
+        return resized_image
 
     # displaying a suggestion to open generate menu if there are currently no outfits saved
     def display_empty(self):
@@ -319,24 +314,40 @@ class HomeScreen(tk.Frame):
 
     # display weather
     def display_weather(self):
-        fetch = requests.get(self.weather_url)  # using python requests package to access the url
-        response = fetch.json() # fetches the json response
-        
-        # accesses the necessary aspects of the json file and sets them as temp variables to be returned
-        location = response["location"]["name"]
-        icon = response["current"]["condition"]["icon"]
-        current_temp = response["current"]["temp_c"]
-        dayDesc = response["forecast"]["forecastday"][0]["day"]["condition"]["text"]
-        high_temp = response["forecast"]["forecastday"][0]["day"]["maxtemp_c"]
-        low_temp = response["forecast"]["forecastday"][0]["day"]["mintemp_c"]
-        feels_like = response["current"]["feelslike_c"]
+        fetch_success = False
+        try:
+            fetch = requests.get(self.weather_url)  # using python requests package to access the url
+            response = fetch.json() # fetches the json response
+            fetch_success = True
+        except:
+            self.weatherFetchError.pack()
 
-        return location, icon, current_temp, dayDesc, high_temp, low_temp, feels_like
+        if fetch_success:
+            # accesses the necessary aspects of the json file and sets them as temp variables to be returned
+            location = response["location"]["name"]
+            icon = response["current"]["condition"]["icon"]
+            current_temp = response["current"]["temp_c"]
+            dayDesc = response["forecast"]["forecastday"][0]["day"]["condition"]["text"]
+            high_temp = response["forecast"]["forecastday"][0]["day"]["maxtemp_c"]
+            low_temp = response["forecast"]["forecastday"][0]["day"]["mintemp_c"]
+            feels_like = response["current"]["feelslike_c"]
+            return location, icon, current_temp, dayDesc, high_temp, low_temp, feels_like
+        else:
+
+            return None, None, None, None, None, None, None
 
     # loads the weather icon from the given url
     def load_weather_icon(self):
-        url = "https:" + self.icon  # accesses the url of the image file
-        response = requests.get(url)
-        image_data = response.content
-        image = Image.open(BytesIO(image_data))  # opens the image to be used
-        return ImageTk.PhotoImage(image)
+        icon_fetch_success = False
+        if self.icon:
+            url = "https:" + self.icon  # accesses the url of the image file
+            try:
+                response = requests.get(url)
+                image_data = response.content
+                icon_fetch_success = True
+            except:
+                return None
+            if icon_fetch_success:
+                image = Image.open(BytesIO(image_data))  # opens the image to be used
+                return ImageTk.PhotoImage(image)
+

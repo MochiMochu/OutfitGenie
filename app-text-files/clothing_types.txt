@@ -2,7 +2,8 @@ t-shirt
 graphic tee
 polo shirt
 corset
-off the shoulder top
+long sleeved top
+off shoulder top
 bodysuit
 camisole
 crop top
@@ -34,7 +35,6 @@ maxi dress
 bodycon dress
 dungarees
 jumpsuit
-overalls
 blazer
 gilet
 fur coat

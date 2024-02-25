@@ -5,6 +5,7 @@ import re
 from opencage.geocoder import OpenCageGeocode  # imports the module for the weather API
 import bcrypt
 import CentreWindow as cw
+import uuid
 
 
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
@@ -17,8 +18,7 @@ class SignUpEntry(ttk.Entry):
 
 class SignUpScreen(tk.Frame):
     def __init__(self, parent, user_logged_in, open_home, close_app, *args, **kwargs):
-        ttk.Frame.__init__(self, parent, *args, **kwargs)
-        super().__init__()
+        tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.geo_api = "57685bde1a7349b78f9c15209ac92d32"  # api key for geosearching
         self.window = None
@@ -68,6 +68,7 @@ class SignUpScreen(tk.Frame):
         self.passwordNoConfirm = None
         self.invalidEmail = None
         self.unknownLocation = None
+        self.api_fail = None
 
         self.successCreate = None
         self.successMessage = None
@@ -178,6 +179,7 @@ class SignUpScreen(tk.Frame):
         self.passwordNoConfirm = ttk.Label(self.signUpCont, text="Error, password entries do not match.")
         self.invalidEmail = ttk.Label(self.signUpCont, text="Error, email is used or invalid.")
         self.unknownLocation = ttk.Label(self.signUpCont, text="Error, location not found.")
+        self.api_fail = ttk.Label(self.signUpCont, text="Error, unable to validate location at this time.")
 
         # account successful creation message widget
         self.frame_style.configure("Success.TFrame",
@@ -261,7 +263,7 @@ class SignUpScreen(tk.Frame):
         existing_usernames = self.username_taken()
         if existing_usernames:
             # checks if password meets requirements
-            flags = self.password_validity()
+            flags = self.password_validity(self.password.get())
             if self.password_errors(flags):
                 # checks if both entered passwords match
                 password_match = self.confirm_password()
@@ -316,17 +318,11 @@ class SignUpScreen(tk.Frame):
         else:
             return False
 
+    @staticmethod
     # checks whether the password meets the requirements for a secure password and passes any flags to password_errors
-    def password_validity(self):
+    def password_validity(password):
         # unpacking any previous password errors
-        self.passwordLonger.pack_forget()
-        self.passwordLower.pack_forget()
-        self.passwordUpper.pack_forget()
-        self.passwordNum.pack_forget()
-        self.passwordSymbol.pack_forget()
-        self.passwordSpace.pack_forget()
-        self.SUusernameTaken.pack_forget()
-        p = self.password.get()
+        p = password
         flags = []
         if len(p) <= 8:
             flags.append("1")
@@ -346,26 +342,41 @@ class SignUpScreen(tk.Frame):
 
     # checks if the user's entered location is a valid place in the world
     def validate_location(self):
+        self.api_fail.pack_forget()
         self.unknownLocation.pack_forget()
-        geocoder = OpenCageGeocode(self.geo_api)
         query = self.location.get() + ", " + self.country.get()
-        results = geocoder.geocode(query)
-        if results and len(results):
-            valid_types = ["village", "hamlet", "neighbourhood", "city", "town", "county", "region",
-                           "country"]  # valid types of location
-            if 'components' in results[0] and '_type' in results[0]['components'] and \
-                    any(t in results[0]['components']['_type'] for t in
-                        valid_types):  # checks if the location is part of the accepted types
-                self.lat = results[0]["geometry"]["lat"]  # saves the latitude
-                self.long = results[0]["geometry"]["lng"]  # saved the longitude
-                return True
+        api_success = False
+        try:
+            geocoder = OpenCageGeocode(self.geo_api)
+            results = geocoder.geocode(query)
+            api_success = True
+        except:
+            self.api_fail.pack()
+
+        if api_success:
+            if results and len(results):
+                valid_types = ["village", "hamlet", "neighbourhood", "city", "town", "county", "region",
+                               "country"]  # valid types of location
+                if 'components' in results[0] and '_type' in results[0]['components'] and \
+                        any(t in results[0]['components']['_type'] for t in
+                            valid_types):  # checks if the location is part of the accepted types
+                    self.lat = results[0]["geometry"]["lat"]  # saves the latitude
+                    self.long = results[0]["geometry"]["lng"]  # saved the longitude
+                    return True
+                else:
+                    return False
             else:
                 return False
-        else:
-            return False
 
     # packs the required error labels for any password criteria that aren't met
     def password_errors(self, flags):
+        self.passwordLonger.pack_forget()
+        self.passwordLower.pack_forget()
+        self.passwordUpper.pack_forget()
+        self.passwordNum.pack_forget()
+        self.passwordSymbol.pack_forget()
+        self.passwordSpace.pack_forget()
+        self.SUusernameTaken.pack_forget()
         for num in flags:
             if num == "0":
                 return True
@@ -395,15 +406,8 @@ class SignUpScreen(tk.Frame):
 
     # retrieves the number of users already signed up in order to create the next user's ID
     def get_user_num(self):
-        conn = sqlite3.connect("OutfitGenieInfo.db")
-        c = conn.cursor()
-        c.execute("""SELECT User_ID FROM Users WHERE User_ID=(SELECT max(user_id) FROM Users)""")
-        record = c.fetchall()
-        if record:
-            user_number = int(record[0][0])
-            user_number += 1
-        else:
-            user_number = 1
+        user_object = uuid.uuid4()
+        user_number = str(user_object)
         return user_number
 
     # submits user details to the database
@@ -435,7 +439,8 @@ class SignUpScreen(tk.Frame):
         conn.close()
         self.save_username(num)  # saves the username to the current user file for later record retrieval
 
-    def hash_password_for_storage(self, password):
+    @staticmethod
+    def hash_password_for_storage(password):
         password = password.encode("utf-8")
         salt = bcrypt.gensalt()
         hashed = bcrypt.hashpw(password, salt)

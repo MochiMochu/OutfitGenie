@@ -20,7 +20,11 @@ def main():
     wardrobe_window = None
 
     def open_signup():
-        login_window.window.destroy()  # clears the login window if it was previously open
+        # clears any possible windows that could lead to the signup screen before opening it
+        if login_window.window and login_window.window.winfo_exists():
+            login_window.window.destroy()
+        if settings_window.window and settings_window.window.winfo_exists():
+            settings_window.window.destroy()
         signup_window.start()  # starts the signup window
 
     # the following procedures checks if any other windows exist other than the one to be loaded, and destroys them if they do
@@ -29,7 +33,6 @@ def main():
     # calls the method to retrieve the user's longitude and latitude for weather generation after they have been logged in
     def user_logged_in():
         home_window.get_weather_variables()
-        home_window.clear_directories()  # clears the folder containing any previous outfit images
 
     def open_home():
         if login_window.window and login_window.window.winfo_exists():
@@ -92,7 +95,7 @@ def main():
     signup_window = Signup.SignUpScreen(root, user_logged_in, open_home, close_app)
     home_window = Homescreen.HomeScreen(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
     generate_window = Generate.GenerateMenu(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
-    settings_window = Settings.SettingsMenu(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
+    settings_window = Settings.SettingsMenu(root, open_signup, open_home, open_generate, open_wardrobe, open_settings, close_app)
     wardrobe_window = Wardrobe.WardrobeMenu(root, open_home, open_generate, open_wardrobe, open_settings, close_app)
 
     login_window.start()
