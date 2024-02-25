@@ -12,7 +12,7 @@ import CentreWindow as cw
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
 class CustomEntry(ttk.Entry):
     def __init__(self, parent, default_text, action_function, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+        ttk.Entry.__init__(parent, *args, **kwargs)
         self.insert(0, default_text)
         self.bind("<FocusIn>", action_function)
 
