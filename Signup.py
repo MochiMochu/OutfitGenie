@@ -76,7 +76,7 @@ class SignUpScreen(tk.Frame):
     # starts this window so that it is placed on the topmost level of all the other windows
     def start(self):
         self.window = tk.Toplevel(self.parent)
-        cw.centrewin(self.window, 600, 800)
+        cw.centrewin(self.window, 600, 850)
         self.window.title("OutfitGenie")
         self.window.protocol("WM_DELETE_WINDOW", self.close_app)
         self.window.configure(bg="#ddedea")
@@ -238,6 +238,20 @@ class SignUpScreen(tk.Frame):
     def temp_country(self, event):
         self.countryEntry.delete(0, "end")
 
+    # clears all errors before validating input again
+    def clear_errors(self):
+        self.passwordLonger.pack_forget()
+        self.passwordLower.pack_forget()
+        self.passwordUpper.pack_forget()
+        self.passwordNum.pack_forget()
+        self.passwordSymbol.pack_forget()
+        self.passwordSpace.pack_forget()
+        self.SUusernameTaken.pack_forget()
+        self.passwordNoConfirm.pack_forget()
+        self.invalidEmail.pack_forget()
+        self.unknownLocation.pack_forget()
+        self.api_fail.pack_forget()
+
     # warns the user if the username has already been taken, clears any password errors too
     def username_error(self):
         self.passwordLonger.pack_forget()
@@ -259,6 +273,7 @@ class SignUpScreen(tk.Frame):
 
     # checking user inputs by calling different functions and packing error messages if they return False
     def check_inputs(self):
+        self.clear_errors()
         # checks if username already exists first
         existing_usernames = self.username_taken()
         if existing_usernames:

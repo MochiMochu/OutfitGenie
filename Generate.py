@@ -153,6 +153,7 @@ class GenerateMenu(tk.Frame):
             # checks if any items exist for the occasion, if not, display an error informing the user that there are too
             # few items
             if not possible_items:
+                print("No possible items")
                 self.error_not_sufficient()
             else:
                 self.errorInsufficientFrame.place_forget()
@@ -161,6 +162,7 @@ class GenerateMenu(tk.Frame):
                 print("tops and bottoms", tops, bottoms)
                 check_sufficient = self.check_enough_items(tops, bottoms)
                 if not check_sufficient:
+                    print("check sufficient failed")
                     self.error_not_sufficient()
                 else:
                     self.errorInsufficientFrame.place_forget()
@@ -184,6 +186,7 @@ class GenerateMenu(tk.Frame):
             response = self.c.fetchall()
             if response:
                 available_items.append(response[0][0])
+        print("reduced available items based on occasion", available_items)
         return available_items
 
     # get the occasion_id from the occasion_name
@@ -200,10 +203,12 @@ class GenerateMenu(tk.Frame):
         occasion_item_query = """SELECT Item_ID FROM Clothing_Items WHERE User_ID = ?"""
         self.c.execute(occasion_item_query, (user_id,))
         response = self.c.fetchall()
+        print(response)
         all_items = []
         for item in response:
             for value in item:
                 all_items.append(value)
+        print("all_items", all_items)
         return all_items
 
     # get id of user to load any saved outfits
@@ -253,7 +258,9 @@ class GenerateMenu(tk.Frame):
         else:
             # checks if there are tops and bottoms of each thickness so an outfit appropriate for the weather is generated
             if self.check_thickness(tops):
+                print("check top thickness", self.check_thickness(tops))
                 if self.check_thickness(bottoms):
+                    print("check bottoms thickness", self.check_thickness(bottoms))
                     # checking if there is at least one item of each bottom length for minimum outfit generation
                     num_long = 0
                     num_short = 0
@@ -262,10 +269,12 @@ class GenerateMenu(tk.Frame):
                         self.c.execute(check_bottom_length_query, (item,))
                         response = self.c.fetchall()
                         entry = response[0][0]
+                        print(entry)
                         if entry.lower() in self.long_bottoms:
                             num_long += 1
                         else:
                             num_short += 1
+                    print("num long", num_long, "num short", num_short)
                     if num_short < 1 or num_long < 1:
                         return False
                     else:
@@ -306,7 +315,7 @@ class GenerateMenu(tk.Frame):
             bottoms_type = "long"
         elif 13 < feels_like <= 20:
             thickness = "thick"
-            outerwear_needed = True
+            outerwear_needed = False
             bottoms_type = "long"
         elif 20 < feels_like <= 25:
             thickness = "medium"
@@ -550,6 +559,10 @@ class GenerateMenu(tk.Frame):
                 self.retrieve_selected_images(item_ids)
                 time.sleep(1)
                 self.compile_images(item_ids)
+            else:
+                self.error_not_sufficient()
+        else:
+            self.error_not_sufficient()
 
     # creates an outfit that fits occasion and temperature requirements, but not necessarily colour
     def create_non_colour_coordinated_outfit(self, tops, bottoms, outerwear, outerwear_needed):

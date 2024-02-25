@@ -5,7 +5,6 @@ import sqlite3
 from sqlite3 import Error
 import Signup as SU
 import CentreWindow as cw
-import time
 
 
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
@@ -16,6 +15,7 @@ class CustomEntry(ttk.Entry):
         self.bind("<FocusIn>", action_function)
 
 
+# creating the class and variables for holding widgets in the window
 class PasswordRecovery(ttk.Frame):
     def __init__(self, parent, *args, **kwargs):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
@@ -64,6 +64,7 @@ class PasswordRecovery(ttk.Frame):
 
         self.start()
 
+    # called by the initiating class to configure the window options and create the widgets
     def start(self):
         self.window = tk.Toplevel(self.parent)
         cw.centrewin(self.window, 600, 500)
@@ -183,7 +184,7 @@ class PasswordRecovery(ttk.Frame):
         self.pr_show_password.set(False)
         self.pr_confirmPasswordEntry.config(show="•")
 
-    # deletes the temporary text in location box
+    # deletes the temporary text in email box
     def temp_email(self, event):
         self.pr_emailEntry.delete(0, "end")
 
@@ -200,6 +201,13 @@ class PasswordRecovery(ttk.Frame):
     def check_info(self):
         # checks if the email matches the username entered
         if self.match_user_email():
+            self.passwordNoConfirm.pack_forget()
+            self.passwordLonger.pack_forget()
+            self.passwordLower.pack_forget()
+            self.passwordUpper.pack_forget()
+            self.passwordNum.pack_forget()
+            self.passwordSymbol.pack_forget()
+            self.passwordSpace.pack_forget()
             # checks if the password is a valid password (ie secure enough)
             flags = SU.SignUpScreen.password_validity(self.pr_password.get())
             if flags[0] == "0":

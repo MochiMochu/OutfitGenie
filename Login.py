@@ -12,7 +12,7 @@ import CentreWindow as cw
 # class defining the custom entry boxes for user input. Contain temporary text that disappears on click
 class CustomEntry(ttk.Entry):
     def __init__(self, parent, default_text, action_function, *args, **kwargs):
-        ttk.Entry.__init__(parent, *args, **kwargs)
+        super().__init__(parent, *args, **kwargs)
         self.insert(0, default_text)
         self.bind("<FocusIn>", action_function)
 
@@ -61,7 +61,7 @@ class LoginScreen(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        # initiating variables to be used
+        # initiating string variables to track values of entry boxes and checkbuttons
         self.username = tk.StringVar(self.window)
         self.password = tk.StringVar(self.window)
         self.show = tk.BooleanVar(self.window, True)  # Boolean variable to track if "show password" is checked
@@ -204,6 +204,7 @@ class LoginScreen(tk.Frame):
         self.usernameNotFound.pack(pady=(5, 0))  # packs the label for the error
         self.passwordNoMatch.pack_forget()  # removes the label for a non-matching password
 
+    # function to open a new window for resetting the user's password
     def recover_password(self):
         recover_password_window = ResetPassword.PasswordRecovery(self.window)
 
